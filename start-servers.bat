@@ -3,7 +3,7 @@ echo Starting Backend and Frontend Servers...
 echo ======================================
 
 cd /d "d:\backend-and-frontend-master\backend-new"
-start "Laravel Server" php artisan serve --port=8001
+start "Laravel Server" php artisan serve --port=8000
 
 cd /d "d:\backend-and-frontend-master\v0-pertamina-frontend-build"
 start "Next.js Server" npm run dev
