@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Services\StatsService;
-use App\Http\Resources\StatsResource;
 use Illuminate\Http\Request;
 
 class StatsController extends BaseApiController
@@ -17,8 +16,12 @@ class StatsController extends BaseApiController
 
     public function index()
     {
-        $stats = $this->statsService->getStats();
-        // For sample data, return directly without using StatsResource
-        return $this->success($stats, 'Statistics retrieved successfully');
+        try {
+            $stats = $this->statsService->getStats();
+            // For maximum performance, return directly without using StatsResource
+            return $this->success($stats, 'Statistics retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->error('Failed to retrieve statistics: ' . $e->getMessage(), 500);
+        }
     }
 }

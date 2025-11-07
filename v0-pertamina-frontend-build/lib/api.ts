@@ -78,12 +78,15 @@ const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept-Encoding': 'gzip, deflate, br'
   },
   timeout: 3000, // Reduced timeout to 3 seconds for faster response
   // Disable request retries for faster failure
   transitional: {
     clarifyTimeoutError: true,
-  }
+  },
+  // Handle compression properly
+  decompress: true,
 });
 
 // Simple in-memory cache for API responses

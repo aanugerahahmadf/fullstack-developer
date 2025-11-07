@@ -61,12 +61,21 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
                 PDO::ATTR_PERSISTENT => true, // Enable persistent connections
+                PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true, // Enable buffered queries for better performance
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, // Enable exceptions for better error handling
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, // Use associative fetch mode
+                // PDO::MYSQL_ATTR_INIT_COMMAND => 'SET SESSION query_cache_type = ON', // Enable query cache (deprecated in newer MySQL versions)
             ]) : [],
             // Connection pooling settings
             'pool' => [
                 'min' => 5,
                 'max' => 20,
                 'idle_timeout' => 300,
+            ],
+            // Performance optimizations
+            'performance' => [
+                'disable_strict_mode' => true, // Disable strict mode for better performance
+                'enable_compression' => true, // Enable compression
             ],
         ],
 
@@ -88,12 +97,21 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
                 PDO::ATTR_PERSISTENT => true, // Enable persistent connections
+                PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true, // Enable buffered queries for better performance
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, // Enable exceptions for better error handling
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, // Use associative fetch mode
+                // PDO::MYSQL_ATTR_INIT_COMMAND => 'SET SESSION query_cache_type = ON', // Enable query cache (deprecated in newer MySQL versions)
             ]) : [],
             // Connection pooling settings
             'pool' => [
                 'min' => 5,
                 'max' => 20,
                 'idle_timeout' => 300,
+            ],
+            // Performance optimizations
+            'performance' => [
+                'disable_strict_mode' => true, // Disable strict mode for better performance
+                'enable_compression' => true, // Enable compression
             ],
         ],
 
@@ -164,6 +182,7 @@ return [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
             'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
             'persistent' => env('REDIS_PERSISTENT', true), // Enable persistent connections
+            'compression' => 'gzip', // Enable compression
         ],
 
         'default' => [
@@ -177,6 +196,11 @@ return [
             'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
             'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
             'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
+            // Performance optimizations
+            'options' => [
+                'timeout' => 2.0, // 2 second timeout
+                'read_timeout' => 2.0, // 2 second read timeout
+            ],
         ],
 
         'cache' => [
@@ -190,6 +214,11 @@ return [
             'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
             'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
             'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
+            // Performance optimizations
+            'options' => [
+                'timeout' => 2.0, // 2 second timeout
+                'read_timeout' => 2.0, // 2 second read timeout
+            ],
         ],
 
     ],

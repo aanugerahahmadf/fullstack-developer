@@ -14,7 +14,11 @@ class CctvRepository extends BaseRepository
 
     public function getByRoomId(int $roomId)
     {
-        return $this->model->where('room_id', $roomId)->get();
+        return $this->model
+            ->select('id', 'room_id', 'name', 'ip_rtsp_url')
+            ->where('room_id', $roomId)
+            ->orderBy('id')
+            ->get();
     }
 
     public function getStreamUrl(int $id)

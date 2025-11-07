@@ -103,14 +103,7 @@ export default function Home() {
     };
   });
   
-  // State for modals
-  const [showBuildingsModal, setShowBuildingsModal] = useState(false);
-  const [showRoomsModal, setShowRoomsModal] = useState(false);
-  const [showCCTVsModal, setShowCCTVsModal] = useState(false);
-  const [buildings, setBuildings] = useState<any[]>([]);
-  const [rooms, setRooms] = useState<any[]>([]);
-  const [cctvs, setCCTVs] = useState<any[]>([]);
-  const [modalLoading, setModalLoading] = useState(false);
+
 
   // Helper function to format dates
   const formatDate = (dateString: string) => {
@@ -118,51 +111,11 @@ export default function Home() {
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
   };
 
-  // Function to fetch buildings for modal
-  const fetchBuildings = async () => {
-    setModalLoading(true);
-    try {
-      const buildingsData = await api.getBuildings();
-      // For display, show just 1 building as per the actual structure
-      const uniqueBuildings = buildingsData.length > 0 ? [buildingsData[0]] : [];
-      setBuildings(uniqueBuildings);
-      setShowBuildingsModal(true);
-    } catch (error) {
-      console.error('Failed to fetch buildings:', error);
-    } finally {
-      setModalLoading(false);
-    }
-  };
 
-  // Function to fetch rooms for modal
-  const fetchRooms = async () => {
-    setModalLoading(true);
-    try {
-      const roomsData = await api.getRooms();
-      // For display, show 3 rooms as per the actual structure
-      const displayRooms = roomsData.length > 0 ? roomsData.slice(0, 3) : [];
-      setRooms(displayRooms);
-      setShowRoomsModal(true);
-    } catch (error) {
-      console.error('Failed to fetch rooms:', error);
-    } finally {
-      setModalLoading(false);
-    }
-  };
 
-  // Function to fetch CCTVs for modal
-  const fetchCCTVs = async () => {
-    setModalLoading(true);
-    try {
-      const cctvsData = await api.getCctvs();
-      setCCTVs(cctvsData);
-      setShowCCTVsModal(true);
-    } catch (error) {
-      console.error('Failed to fetch CCTVs:', error);
-    } finally {
-      setModalLoading(false);
-    }
-  };
+
+
+
 
   // Function to get date range for current month
   const getCurrentMonthDateRange = useCallback(() => {
@@ -424,8 +377,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Production Rate - Total Buildings */}
           <div 
-            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-300 cursor-pointer"
-            onClick={fetchBuildings}
+            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -440,8 +392,7 @@ export default function Home() {
 
           {/* Efficiency - Total Rooms */}
           <div 
-            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-300 cursor-pointer"
-            onClick={fetchRooms}
+            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-300"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -456,8 +407,7 @@ export default function Home() {
 
           {/* Units Active - Total CCTVs */}
           <div 
-            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-300 cursor-pointer"
-            onClick={fetchCCTVs}
+            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-300"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -651,140 +601,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Buildings Modal */}
-      {showBuildingsModal && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-blue-950 border border-white/20 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-white/10">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-white">Building</h3>
-                <button 
-                  onClick={() => setShowBuildingsModal(false)}
-                  className="text-white hover:text-white transition p-1"
-                >
-                  <XCircle className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-            <div className="overflow-y-auto flex-grow p-6">
-              {modalLoading ? (
-                <div className="flex justify-center items-center h-32">
-                  <p className="text-white font-semibold">Loading building...</p>
-                </div>
-              ) : buildings.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {buildings.map((building: any) => (
-                    <div 
-                      key={building.id}
-                      className="border border-white/10 rounded-lg p-4 hover:bg-white/5 cursor-pointer bg-white/5"
-                      onClick={() => {
-                        setShowBuildingsModal(false);
-                        router.push(`/playlist/${building.id}`);
-                      }}
-                    >
-                      <h4 className="font-semibold text-white">{building.name || 'Unnamed Building'}</h4>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-white">
-                  No buildings found
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Rooms Modal */}
-      {showRoomsModal && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-blue-950 border border-white/20 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-white/10">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-white">Room</h3>
-                <button 
-                  onClick={() => setShowRoomsModal(false)}
-                  className="text-white hover:text-white transition p-1"
-                >
-                  <XCircle className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-            <div className="overflow-y-auto flex-grow p-6">
-              {modalLoading ? (
-                <div className="flex justify-center items-center h-32">
-                  <p className="text-white font-semibold">Loading room...</p>
-                </div>
-              ) : rooms.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {rooms.map((room: any) => (
-                    <div 
-                      key={room.id}
-                      className="border border-white/10 rounded-lg p-4 hover:bg-white/5 cursor-pointer bg-white/5"
-                      onClick={() => {
-                        setShowRoomsModal(false);
-                        router.push(`/playlist/${room.building_id}`);
-                      }}
-                    >
-                      <h4 className="font-semibold text-white">{room.name || 'Unnamed Room'}</h4>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-white">
-                  No rooms found
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CCTVs Modal */}
-      {showCCTVsModal && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-blue-950 border border-white/20 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-white/10">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-white">CCTV</h3>
-                <button 
-                  onClick={() => setShowCCTVsModal(false)}
-                  className="text-white hover:text-white transition p-1"
-                >
-                  <XCircle className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-            <div className="overflow-y-auto flex-grow p-6">
-              {modalLoading ? (
-                <div className="flex justify-center items-center h-32">
-                  <p className="text-white font-semibold">Loading CCTV...</p>
-                </div>
-              ) : cctvs.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {cctvs.map((cctv: any) => (
-                    <div 
-                      key={cctv.id}
-                      className="border border-white/10 rounded-lg p-4 hover:bg-white/5 cursor-pointer bg-white/5"
-                      onClick={() => {
-                        setShowCCTVsModal(false);
-                        router.push(`/playlist/${cctv.room_id}`);
-                      }}
-                    >
-                      <h4 className="font-semibold text-white">{cctv.name || 'Unnamed CCTV'}</h4>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-white">
-                  No CCTVs found
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   )
 }

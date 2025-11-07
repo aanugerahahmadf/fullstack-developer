@@ -8,34 +8,41 @@ use Illuminate\Support\Facades\Log;
 
 class PerformanceMonitor
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return mixed
-     */
     public function handle(Request $request, Closure $next)
     {
-        $start = microtime(true);
+        // Only monitor API routes
+        if (!$this->isApiRoute($request)) {
+            return $next($request);
+        }
 
+        // Record start time
+        $startTime = microtime(true);
+
+        // Process the request
         $response = $next($request);
 
-        $end = microtime(true);
-        $duration = ($end - $start) * 1000; // Convert to milliseconds
+        // Calculate execution time
+        $executionTime = (microtime(true) - $startTime) * 1000; // Convert to milliseconds
 
         // Log slow requests (over 100ms)
-        if ($duration > 100) {
-            Log::warning('Slow API request', [
-                'method' => $request->method(),
+        if ($executionTime > 100) {
+            Log::warning('Slow API Request', [
                 'url' => $request->fullUrl(),
-                'duration_ms' => $duration
+                'method' => $request->method(),
+                'execution_time_ms' => round($executionTime, 2),
+                'status_code' => $response->getStatusCode(),
+                'user_agent' => $request->userAgent(),
             ]);
         }
 
-        // Add response time header
-        $response->headers->set('X-Response-Time', $duration . 'ms');
+        // Add performance header for debugging
+        $response->headers->set('X-Response-Time', round($executionTime, 2) . 'ms');
 
         return $response;
+    }
+
+    private function isApiRoute(Request $request): bool
+    {
+        return str_starts_with($request->path(), 'api/');
     }
 }

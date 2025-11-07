@@ -48,8 +48,8 @@ class ProxyToFrontend
     private function proxyToNextJs(Request $request)
     {
         try {
-            // Proxy to the standalone Next.js server running on port 3001
-            $url = "http://127.0.0.1:3001/" . ltrim($request->path(), '/');
+            // Proxy to the standalone Next.js server running on port 3002
+            $url = "http://127.0.0.1:3002/" . ltrim($request->path(), '/');
             Log::info('ProxyToFrontend: Proxying to ' . $url);
 
             // Use Laravel's HTTP client to make the request with the same method

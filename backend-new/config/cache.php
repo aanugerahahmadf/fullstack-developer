@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('CACHE_STORE', 'redis'),
+    'default' => env('CACHE_STORE', 'database'),
 
     /*
     |--------------------------------------------------------------------------
@@ -45,6 +45,11 @@ return [
             'table' => env('DB_CACHE_TABLE', 'cache'),
             'lock_connection' => env('DB_CACHE_LOCK_CONNECTION'),
             'lock_table' => env('DB_CACHE_LOCK_TABLE'),
+            // Performance optimizations
+            'serialize' => true,
+            'options' => [
+                'compression' => true,
+            ],
         ],
 
         'file' => [
@@ -78,6 +83,11 @@ return [
             'lock_connection' => env('REDIS_CACHE_LOCK_CONNECTION', 'default'),
             // Enable serialization for better performance
             'serialize' => true,
+            // Add performance optimizations
+            'options' => [
+                'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-cache:'),
+                'compression' => true,
+            ],
         ],
 
         'dynamodb' => [
@@ -96,7 +106,6 @@ return [
         'failover' => [
             'driver' => 'failover',
             'stores' => [
-                'redis',
                 'database',
                 'array',
             ],

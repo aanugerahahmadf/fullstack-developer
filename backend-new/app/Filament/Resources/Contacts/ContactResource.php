@@ -51,22 +51,31 @@ class ContactResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID'),
+                TextColumn::make('position')
+                    ->label('ID')
+                    ->getStateUsing(function ($record, $rowLoop) {
+                        return $rowLoop->iteration;
+                    })
+                    ->alignment('center'),
                 TextColumn::make('email')
-                    ->searchable(),
+                    ->searchable()
+                    ->alignment('center'),
                 TextColumn::make('phone')
-                    ->searchable(),
+                    ->searchable()
+                    ->alignment('center'),
                 TextColumn::make('instagram')
-                    ->searchable(),
+                    ->searchable()
+                    ->alignment('center'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->alignment('center'),
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->alignment('center'),
             ])
             ->filters([
                 //

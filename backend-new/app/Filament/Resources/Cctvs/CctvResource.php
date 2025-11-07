@@ -82,28 +82,39 @@ class CctvResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID'),
+                TextColumn::make('position')
+                    ->label('ID')
+                    ->getStateUsing(function ($record, $rowLoop) {
+                        return $rowLoop->iteration;
+                    })
+                    ->alignment('center'),
                 TextColumn::make('building.name')
-                    ->searchable(),
+                    ->searchable()
+                    ->alignment('center'),
                 TextColumn::make('room.name')
-                    ->searchable(),
+                    ->searchable()
+                    ->alignment('center'),
                 TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->alignment('center'),
                 TextColumn::make('ip_address')
-                    ->searchable(),
+                    ->searchable()
+                    ->alignment('center'),
                 TextColumn::make('ip_rtsp_url')
                     ->label('RTSP URL')
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: false),
+                    ->toggleable(isToggledHiddenByDefault: false)
+                    ->alignment('center'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->alignment('center'),
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->alignment('center'),
             ])
             ->filters([
                 //

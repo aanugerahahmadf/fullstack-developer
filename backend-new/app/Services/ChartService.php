@@ -18,8 +18,8 @@ class ChartService extends BaseService
 
     public function getProductionTrends()
     {
-        // Cache the production trends data for 30 seconds to improve performance
-        return Cache::remember('production_trends', 30, function () {
+        // Cache the production trends data for 5 seconds to improve performance
+        return Cache::remember('production_trends', 5, function () {
             // In a real application, this would retrieve actual chart data from the repository
             // For now, we'll return sample data but in the future this would come from the database
             // Using actual dates for the current month
@@ -38,8 +38,8 @@ class ChartService extends BaseService
 
     public function getUnitPerformance()
     {
-        // Cache the unit performance data for 30 seconds to improve performance
-        return Cache::remember('unit_performance', 30, function () {
+        // Cache the unit performance data for 5 seconds to improve performance
+        return Cache::remember('unit_performance', 5, function () {
             // Get actual building names from the database with optimized query
             $buildings = Building::select('name')->get();
 

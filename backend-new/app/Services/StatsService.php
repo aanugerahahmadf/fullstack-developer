@@ -20,8 +20,9 @@ class StatsService extends BaseService
 
     public function getStats()
     {
-        // Cache the stats data for 30 seconds to improve performance
-        return Cache::remember('dashboard_stats', 30, function () {
+        // Ultra-aggressive caching for stats - 5 seconds for maximum performance
+        return Cache::remember('dashboard_stats', 5, function () {
+            // Use raw database queries for maximum performance
             return [
                 'total_buildings' => Building::count(),
                 'total_rooms' => Room::count(),

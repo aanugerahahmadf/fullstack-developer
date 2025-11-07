@@ -20,6 +20,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use UnitEnum;
+use Illuminate\Support\Facades\DB;
 
 class BuildingResource extends Resource
 {
@@ -54,30 +55,40 @@ class BuildingResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID'),
+                TextColumn::make('position')
+                    ->label('ID')
+                    ->getStateUsing(function ($record, $rowLoop) {
+                        return $rowLoop->iteration;
+                    })
+                    ->alignment('center'),
                 TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->alignment('center'),
                 TextColumn::make('latitude')
                     ->searchable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->alignment('center'),
                 TextColumn::make('longitude')
                     ->searchable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->alignment('center')                   ,
                 TextColumn::make('marker_icon_url')
                     ->searchable()
                     ->toggleable()
                     ->formatStateUsing(fn ($state): string => $state ?? 'Using default icon')
                     ->url(fn ($record) => $record->marker_icon_url)
-                    ->openUrlInNewTab(),
+                    ->openUrlInNewTab()
+                    ->alignment('center'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->alignment('center'),
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->alignment('center'),
             ])
             ->filters([
                 //
