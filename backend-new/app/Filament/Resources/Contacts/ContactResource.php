@@ -66,6 +66,9 @@ class ContactResource extends Resource
                 TextColumn::make('instagram')
                     ->searchable()
                     ->alignment('center'),
+                TextColumn::make('address')
+                    ->searchable()
+                    ->alignment('center'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
