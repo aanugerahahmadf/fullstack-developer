@@ -68,21 +68,13 @@ app.get('/api/start-stream/:cctvId', async (req, res) => {
   try {
     // In a real implementation, you would fetch the RTSP URL from your Laravel backend
     // For now, we'll simulate this with a test URL
-    // const response = await fetch(`http://127.0.0.1:8000/api/cctvs/${cctvId}`);
-    // const cctvData = await response.json();
-    // const rtspUrl = cctvData.data.ip_rtsp_url;
+    const response = await fetch(`http://127.0.0.1:8000/api/cctvs/${cctvId}`);
+    const cctvData = await response.json();
+    const rtspUrl = cctvData.data.ip_rtsp_url;
     
-    // For testing purposes, we'll use a sample RTSP URL
+    // For testing purposes, we'll use a sample RTSP URL if the above fails
     // In production, replace this with the actual RTSP URL from the database
-    const rtspUrl = 'rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov';
-    
-    // Check if stream is already running
-    if (ffmpegProcesses.has(cctvId)) {
-      return res.json({ 
-        message: 'Stream already running', 
-        streamUrl: `http://127.0.0.1:8000/live/${cctvId}/index.m3u8` 
-      });
-    }
+    // const rtspUrl = 'rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov';
     
     // Start FFmpeg process to convert RTSP to HLS
     const hlsOutput = path.join(streamsDir, cctvId);
