@@ -1,31 +1,79 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Building2 } from "lucide-react"
+import dynamic from 'next/dynamic'
 import Link from "next/link"
-import { api } from '@/lib/api'
+import { getBuildings } from '@/lib/api'
+
+// Dynamically import lucide-react icons to avoid HMR issues with Turbopack
+const Search = dynamic(() => import('lucide-react').then((mod) => mod.Search), { ssr: false })
+const Building2 = dynamic(() => import('lucide-react').then((mod) => mod.Building2), { ssr: false })
 
 export default function PlaylistPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [buildings, setBuildings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  // State for dynamically imported icons
+  const [icons, setIcons] = useState({
+    Search: null as any,
+    Building2: null as any,
+  });
+
+  // Load icons dynamically with error handling
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadIcons = async () => {
+      try {
+        const { Search, Building2 } = await import('lucide-react');
+        if (isMounted) {
+          setIcons({ Search, Building2 });
+        }
+      } catch (error) {
+        console.warn('Failed to load icons:', error);
+        if (isMounted) {
+          setIcons({
+            Search: null,
+            Building2: null,
+          });
+        }
+      }
+    };
+    
+    loadIcons();
+    
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Load data only once on component mount
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchBuildings = async () => {
       try {
-        const data = await api.getBuildings()
+        const data = await getBuildings()
         // Ensure data is an array
         if (Array.isArray(data)) {
-          setBuildings(data)
+          if (isMounted) {
+            setBuildings(data)
+          }
         } else {
-          setBuildings([])
+          if (isMounted) {
+            setBuildings([])
+          }
         }
       } catch (error) {
         console.error('Failed to fetch buildings:', error)
-        setBuildings([])
+        if (isMounted) {
+          setBuildings([])
+        }
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
@@ -34,8 +82,11 @@ export default function PlaylistPage() {
       fetchBuildings()
     }, 50);
     
-    return () => clearTimeout(timer);
-  }, []) // Empty dependency array - only run once on mount
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [])
 
   const filteredBuildings = buildings
     .filter((b: any) => b.name && b.name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -87,7 +138,7 @@ export default function PlaylistPage() {
       {/* Search - responsive design */}
       <div className="max-w-7xl mx-auto px-4 pb-6 w-full">
         <div className="relative">
-          <Search className="absolute left-3 top-3 text-white" size={20} />
+          {icons.Search ? <icons.Search className="absolute left-3 top-3 text-white" size={20} /> : <div className="absolute left-3 top-3 text-white" style={{width: 20, height: 20}}></div>}
           <input
             key="search-input"
             type="text"
@@ -109,7 +160,7 @@ export default function PlaylistPage() {
           </div>
         ) : filteredBuildings.length === 0 ? (
           <div className="text-center py-12">
-            <Building2 className="w-12 h-12 text-white mx-auto mb-4" />
+            {icons.Building2 ? <icons.Building2 className="w-12 h-12 text-white mx-auto mb-4" /> : <div className="w-12 h-12 text-white mx-auto mb-4"></div>}
             <p className="text-white font-semibold">No building available</p>
             <p className="text-white text-sm mt-2">Building will appear once added in admin panel</p>
           </div>
@@ -118,7 +169,7 @@ export default function PlaylistPage() {
             {filteredBuildings.map((building) => (
               <div key={building.id} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 md:p-6 hover:bg-white/15 transition-all duration-300">
                 <div className="flex items-center gap-3 mb-4">
-                  <Building2 className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
+                  {icons.Building2 ? <icons.Building2 className="w-5 h-5 md:w-6 md:h-6 text-blue-400" /> : <div className="w-5 h-5 md:w-6 md:h-6 text-blue-400"></div>}
                   <h3 className="text-lg md:text-xl font-semibold text-white truncate">
                     {building.name || 'Unnamed Building'}
                   </h3>
@@ -142,3 +193,5 @@ export default function PlaylistPage() {
     </main>
   )
 }
+
+

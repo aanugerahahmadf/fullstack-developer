@@ -35,4 +35,22 @@ class Room extends Model
     {
         return $this->hasMany(Cctv::class);
     }
+
+    // Clear cache when room is created, updated, or deleted
+    public static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($room) {
+            \App\Models\Building::clearAllCaches();
+        });
+
+        static::updated(function ($room) {
+            \App\Models\Building::clearAllCaches();
+        });
+
+        static::deleted(function ($room) {
+            \App\Models\Building::clearAllCaches();
+        });
+    }
 }

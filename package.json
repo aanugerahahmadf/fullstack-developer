@@ -1,0 +1,24 @@
+{
+  "name": "fullstack-pertamina-app",
+  "version": "1.0.0",
+  "description": "Fullstack Pertamina Application with Laravel Backend and Next.js Frontend",
+  "main": "start-app.js",
+  "scripts": {
+    "start": "node complete-integration.js",
+    "dev": "node start-fullstack.js",
+    "complete": "node complete-integration.js",
+    "structured": "node structured-startup.js",
+    "build": "node build-and-deploy.js",
+    "test": "node --experimental-fetch test-api-connection.js",
+    "test:integration": "node test-integration.js",
+    "test:final": "node final-test.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  },
+  "dependencies": {
+    "api": "^6.1.3",
+    "axios": "^1.13.2",
+    "node-fetch": "^3.3.2"
+  }
+}

@@ -42,10 +42,13 @@ class Cors
         }
 
         $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-CSRF-TOKEN');
         $response->headers->set('Access-Control-Allow-Credentials', 'true');
         $response->headers->set('Access-Control-Max-Age', '86400');
         $response->headers->set('Vary', 'Origin');
+
+        // Add additional headers that might be needed
+        $response->headers->set('Access-Control-Expose-Headers', 'Authorization, X-Requested-With');
 
         return $response;
     }

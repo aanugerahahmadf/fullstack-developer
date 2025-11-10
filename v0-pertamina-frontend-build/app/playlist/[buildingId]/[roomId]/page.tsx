@@ -1,36 +1,71 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Search, Video, ArrowLeft, Play, ExternalLink } from "lucide-react"
+import dynamic from 'next/dynamic'
 import Link from "next/link"
-import { useParams } from "next/navigation"
-import { api } from '@/lib/api'
+import { useParams } from "next/navigation" // Changed to useParams for App Router
+import { getRoom, getCctvsByRoom, getCctvStreamUrl } from '@/lib/api'
+
+// Dynamically import lucide-react icons to avoid HMR issues with Turbopack
+const Search = dynamic(() => import('lucide-react').then((mod) => mod.Search), { ssr: false })
+const Video = dynamic(() => import('lucide-react').then((mod) => mod.Video), { ssr: false })
+const ArrowLeft = dynamic(() => import('lucide-react').then((mod) => mod.ArrowLeft), { ssr: false })
+const Play = dynamic(() => import('lucide-react').then((mod) => mod.Play), { ssr: false })
+const ExternalLink = dynamic(() => import('lucide-react').then((mod) => mod.ExternalLink), { ssr: false })
 
 // Add metadata for the page
 
-export default function PlaylistCctvPage() {
-  const params = useParams()
-  const buildingId = params.buildingId as string
-  const roomId = params.roomId as string
-  const [searchTerm, setSearchTerm] = useState("")
-  const [cctvs, setCctvs] = useState<any[]>([])
-  const [room, setRoom] = useState<any>(null)
-  const [selectedCctv, setSelectedCctv] = useState<any>(null)
-  const [showLiveStream, setShowLiveStream] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const videoPlayerRef = useRef<HTMLDivElement>(null)
+export default function RoomCctvsPage() {
+  const params = useParams(); // Using useParams instead of useRouter for App Router
+  const { buildingId, roomId } = params;
+  const [room, setRoom] = useState<any>(null);
+  const [cctvs, setCctvs] = useState<any[]>([]);
+  const [selectedCctv, setSelectedCctv] = useState<any>(null);
+  const [streamData, setStreamData] = useState<any>(null);
+  const [showLiveStream, setShowLiveStream] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [apiStatus, setApiStatus] = useState('connected');
+  const [systemStatus, setSystemStatus] = useState({status: 'active', message: 'All systems operational'});
+  const [searchTerm, setSearchTerm] = useState("");
+  const videoPlayerRef = useRef<HTMLDivElement>(null);
+  
+  // State for dynamically imported icons
+  const [icons, setIcons] = useState({
+    ArrowLeft: null as any,
+    Search: null as any,
+    Monitor: null as any,
+    Play: null as any,
+    CheckCircle: null as any,
+    AlertTriangle: null as any,
+    XCircle: null as any,
+    Video: null as any,
+  });
+
+  // Load icons dynamically
+  useEffect(() => {
+    const loadIcons = async () => {
+      const { ArrowLeft, Search, Monitor, Play, CheckCircle, AlertTriangle, XCircle, Video } = await import('lucide-react');
+      setIcons({ ArrowLeft, Search, Monitor, Play, CheckCircle, AlertTriangle, XCircle, Video });
+    };
+    
+    loadIcons();
+  }, []);
 
   // Load data only once on component mount - no automatic refreshing
   useEffect(() => {
     const fetchRoomAndCctvs = async () => {
       try {
         // Fetch room details
-        const roomData = await api.getRoom(roomId)
-        setRoom(roomData)
+        if (typeof roomId === 'string') {
+          const roomData = await getRoom(roomId)
+          setRoom(roomData)
+        }
         
         // Fetch CCTVs for this room
-        const cctvsData = await api.getCctvsByRoom(roomId)
-        setCctvs(cctvsData)
+        if (typeof roomId === 'string') {
+          const cctvsData = await getCctvsByRoom(roomId)
+          setCctvs(cctvsData)
+        }
       } catch (error) {
         console.error('Failed to fetch room or CCTVs:', error)
       } finally {
@@ -57,8 +92,9 @@ export default function PlaylistCctvPage() {
       setSelectedCctv(cctv)
       setShowLiveStream(true)
       // Fetch stream URL
-      const streamData = await api.getCctvStreamUrl(cctv.id)
+      const streamData = await getCctvStreamUrl(cctv.id)
       console.log('Stream URL:', streamData)
+      setStreamData(streamData) // Added this line to actually set the stream data
       // In a real implementation, you would use this URL to play the stream
     } catch (error) {
       console.error('Failed to fetch stream URL:', error)
@@ -86,6 +122,7 @@ export default function PlaylistCctvPage() {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setShowLiveStream(false)
+        setStreamData(null) // Reset stream data when closing modal
       }
     }
     window.addEventListener('keydown', handleEsc)
@@ -98,7 +135,7 @@ export default function PlaylistCctvPage() {
       <div className="pt-4 pb-6 px-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href={`/playlist/${buildingId}`} className="text-blue-300 hover:text-white transition p-2">
-            <ArrowLeft size={20} className="md:w-6 md:h-6" />
+            {icons.ArrowLeft && <icons.ArrowLeft size={20} className="md:w-6 md:h-6" />}
           </Link>
           <h1 className="text-2xl md:text-3xl font-semibold text-white truncate text-center flex-grow mx-4">
             {room ? room.name : 'Playlist'}
@@ -110,7 +147,7 @@ export default function PlaylistCctvPage() {
       {/* Search - responsive design */}
       <div className="max-w-7xl mx-auto px-4 pb-6">
         <div className="relative">
-          <Search className="absolute left-3 top-3 text-white" size={20} />
+          {icons.Search && <icons.Search className="absolute left-3 top-3 text-white" size={20} />}
           <input
             type="text"
             placeholder="Search CCTV..."
@@ -130,7 +167,7 @@ export default function PlaylistCctvPage() {
           </div>
         ) : filteredCctvs.length === 0 ? (
           <div className="text-center py-12">
-            <Video className="w-12 h-12 text-white mx-auto mb-4" />
+            {icons.Video && <icons.Video className="w-12 h-12 text-white mx-auto mb-4" />}
             <p className="text-white font-semibold">No CCTV cameras available</p>
           </div>
         ) : (
@@ -141,7 +178,7 @@ export default function PlaylistCctvPage() {
                 className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 md:p-6 hover:bg-white/15 transition-all duration-300"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <Video className="w-5 h-5 md:w-6 md:h-6 text-red-400" />
+                  {icons.Video && <icons.Video className="w-5 h-5 md:w-6 md:h-6 text-red-400" />}
                   <h3 className="text-lg md:text-xl font-semibold text-white truncate">{cctv.name}</h3>
                 </div>
                 
@@ -160,7 +197,7 @@ export default function PlaylistCctvPage() {
                     onClick={() => handleLiveStream(cctv)}
                     className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                   >
-                    <Play size={16} />
+                    {icons.Play && <icons.Play size={16} />}
                     <span className="text-sm">LIVE STREAM</span>
                   </button>
                 </div>
@@ -169,7 +206,7 @@ export default function PlaylistCctvPage() {
           </div>
         )}
       </div>
-
+      
       {/* Live Stream Modal - responsive design */}
       {showLiveStream && selectedCctv && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -177,11 +214,12 @@ export default function PlaylistCctvPage() {
             {/* Header */}
             <div className="flex items-center justify-between p-4 md:p-6 border-b border-white/10">
               <h2 className="text-lg md:text-xl font-semibold text-white flex items-center gap-2">
+                {icons.Video && <icons.Video className="w-5 h-5 text-red-400" />}
                 <span className="truncate max-w-[150px] sm:max-w-xs md:max-w-md">{selectedCctv.name}</span>
               </h2>
               <button 
                 onClick={() => setShowLiveStream(false)} 
-                className="text-white hover:text-white transition p-1"
+                className="text-white/70 hover:text-white transition p-1"
                 aria-label="Close"
               >
                 <span className="text-2xl font-light">×</span>
@@ -189,15 +227,39 @@ export default function PlaylistCctvPage() {
             </div>
 
             {/* Video Player - responsive aspect ratio */}
-            <div ref={videoPlayerRef} className="aspect-video bg-black/50 flex items-center justify-center flex-grow">
-              <div className="text-center p-4">
-                <Video className="w-8 h-8 text-white mx-auto mb-3" />
-                <p className="text-white font-semibold">Live stream player</p>
-                <div className="mt-4 text-xs text-white">
-                  <p className="truncate">{selectedCctv.ip_address}</p>
-                  <p>{selectedCctv.username}</p>
+            <div ref={videoPlayerRef} className="aspect-video bg-black/50 flex items-center justify-center flex-grow relative">
+              {streamData && streamData.stream_url ? (
+                <video 
+                  src={streamData.stream_url} 
+                  autoPlay 
+                  controls 
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    console.error('Video playback error:', e);
+                    // Handle playback errors gracefully
+                  }}
+                >
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <div className="text-center p-4">
+                  {streamData === null ? (
+                    <>
+                      {icons.Video && <icons.Video className="w-8 h-8 text-white/30 mx-auto mb-3" />}
+                      <p className="text-white/50 font-semibold">Live stream player</p>
+                      <div className="mt-4 text-xs text-white/40">
+                        <p className="truncate">{selectedCctv.ip_address}</p>
+                        <p>{selectedCctv.username}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-3"></div>
+                      <p className="text-white font-semibold">Loading stream...</p>
+                    </>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
             
             {/* Stream Controls - responsive design */}

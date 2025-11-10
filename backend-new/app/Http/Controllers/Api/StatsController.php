@@ -2,26 +2,37 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Services\StatsService;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
-class StatsController extends BaseApiController
+class StatsController extends Controller
 {
-    protected $statsService;
-
-    public function __construct(StatsService $statsService)
-    {
-        $this->statsService = $statsService;
-    }
-
+    /**
+     * Get system statistics
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index()
     {
         try {
-            $stats = $this->statsService->getStats();
-            // For maximum performance, return directly without using StatsResource
-            return $this->success($stats, 'Statistics retrieved successfully');
+            // Optimized query for fast response
+            $stats = [
+                'total_buildings' => DB::table('buildings')->count(),
+                'total_rooms' => DB::table('rooms')->count(),
+                'total_cctvs' => DB::table('cctvs')->count(),
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Statistics retrieved successfully',
+                'data' => $stats
+            ], 200);
         } catch (\Exception $e) {
-            return $this->error('Failed to retrieve statistics: ' . $e->getMessage(), 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve statistics: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

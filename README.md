@@ -1,140 +1,256 @@
-# Fullstack Developer Project
+# Pertamina Fullstack Application
 
-This repository contains a fullstack web application built with modern technologies including Next.js for the frontend and Laravel for the backend.
+This is a fully integrated fullstack application combining:
+- **Backend**: Laravel 12 with Filament v4 Admin Panel
+- **Frontend**: React/TypeScript Next.js Application
 
-## Project Overview
+## 🏗️ Architecture
 
-A comprehensive dashboard application for monitoring and managing refinery operations with real-time data visualization, interactive maps, and CCTV monitoring capabilities.
+```
+.
+├── backend-new/                 # Laravel 12 + Filament v4 Backend
+│   ├── app/                     # Laravel application code
+│   ├── frontend/                # Next.js standalone build
+│   └── public/                  # Laravel public directory
+└── v0-pertamina-frontend-build/ # Next.js frontend source code
+```
 
-## Features
+## 🚀 How It Works
 
-### Frontend (Next.js)
-- **Dashboard**: Real-time monitoring of production metrics and system status
-- **Interactive Maps**: Building and room visualization with Leaflet.js
-- **CCTV Monitoring**: Live stream viewing for security cameras
-- **Playlist Management**: Organized content playback system
-- **Responsive Design**: Works on all device sizes
-- **Modern UI**: Clean, professional interface with dark theme
+1. **Laravel Backend** (Port 8000):
+   - Serves API endpoints at `/api/*`
+   - Serves Filament admin panel at `/admin/*`
+   - Proxies all other requests to Next.js frontend
 
-### Backend (Laravel)
-- **RESTful API**: Comprehensive endpoints for all frontend needs
-- **Data Management**: CRUD operations for buildings, rooms, and CCTV cameras
-- **Authentication**: Secure user access control
-- **Database**: Efficient data storage and retrieval
+2. **Next.js Frontend** (Port 3000):
+   - Serves the React/TypeScript frontend application
+   - Communicates with Laravel backend via API calls
 
-## Technology Stack
+3. **Unified Access** (Port 8000):
+   - Both applications accessible through single URL: http://localhost:8000
 
-### Frontend
-- **Next.js 13+** - React framework with App Router
-- **TypeScript** - Type-safe JavaScript
-- **Tailwind CSS** - Utility-first CSS framework
-- **React Leaflet** - Interactive maps
-- **Recharts** - Data visualization
-- **Lucide React** - Icon library
+## 🛠️ Prerequisites
 
-### Backend
-- **Laravel 10+** - PHP framework
-- **MySQL** - Database management
-- **Sanctum** - API authentication
-- **Filament** - Admin panel
-
-## Installation
-
-### Prerequisites
-- Node.js 16+
-- PHP 8.1+
-- MySQL
+- PHP 8.2 or higher
 - Composer
+- Node.js 18 or higher
+- npm or yarn
+- MySQL or compatible database
 
-### Frontend Setup
+## 📦 Installation
+
+1. **Install Laravel dependencies**:
+   ```bash
+   cd backend-new
+   composer install
+   ```
+
+2. **Install frontend dependencies**:
+   ```bash
+   cd ../v0-pertamina-frontend-build
+   npm install
+   ```
+
+3. **Configure environment**:
+   ```bash
+   cd ../backend-new
+   cp .env.example .env
+   php artisan key:generate
+   ```
+   
+   Update database configuration in `.env` file:
+   ```env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=your_database_name
+   DB_USERNAME=your_username
+   DB_PASSWORD=your_password
+   ```
+
+4. **Run database migrations and seeders**:
+   ```bash
+   php artisan migrate
+   php artisan db:seed --class=SuperAdminSeeder
+   php artisan db:seed --class=RolePermissionSeeder
+   ```
+
+5. **Build the frontend**:
+   ```bash
+   cd ../v0-pertamina-frontend-build
+   npm run build
+   ```
+
+6. **Copy standalone build to backend**:
+   ```bash
+   # From v0-pertamina-frontend-build directory
+   xcopy .next\standalone\v0-pertamina-frontend-build ..\backend-new\frontend /E /I /H
+   ```
+
+## ▶️ Running the Application
+
+### Option 1: Using the startup script (Recommended)
 ```bash
-cd v0-pertamina-frontend-build
-npm install
-npm run dev
+# From the root directory
+npm start
 ```
 
-### Backend Setup
-```bash
-cd backend-new
-composer install
-cp .env.example .env
-php artisan key:generate
-# Configure your database in .env
-php artisan migrate
-php artisan serve
-```
+### Option 2: Manual start
+1. **Start Laravel backend**:
+   ```bash
+   cd backend-new
+   php artisan serve
+   ```
 
-## Project Structure
+2. **Start Next.js frontend** (development mode):
+   ```bash
+   cd v0-pertamina-frontend-build
+   npm run dev
+   ```
 
-```
-├── backend-new/           # Laravel backend
-│   ├── app/              # Application logic
-│   ├── config/           # Configuration files
-│   ├── database/         # Migrations and seeds
-│   └── routes/           # API routes
-├── v0-pertamina-frontend-build/  # Next.js frontend
-│   ├── app/              # Pages and components
-│   ├── components/       # Reusable components
-│   ├── lib/              # API and utility functions
-│   └── public/           # Static assets
-```
+3. **Access the application**: http://localhost:8000
 
-## Key Components
+### Option 3: Production mode
+1. **Start Laravel backend**:
+   ```bash
+   cd backend-new
+   php artisan serve
+   ```
 
-### Dashboard (`/`)
-- Production trends visualization
-- Unit performance metrics
-- System status monitoring
-- Building/Room/CCTV statistics
+2. **Start Next.js frontend** (production mode):
+   ```bash
+   cd backend-new/frontend
+   node server.js
+   ```
 
-### Maps (`/maps`)
-- Interactive building visualization
-- Room and CCTV location mapping
-- Live stream access
+## 🌐 Access Points
 
-### Playlist (`/playlist`)
-- Hierarchical content organization
-- Building → Room → CCTV navigation
-- Media playback interface
+- **Main Application**: http://localhost:8000
+- **Admin Panel**: http://localhost:8000/admin
+- **API Endpoints**: http://localhost:8000/api/*
+- **Direct Frontend Access**: http://localhost:3000 (development only)
 
-## API Endpoints
+## 🧪 Testing API Endpoints
 
-- `GET /api/stats` - System statistics
-- `GET /api/buildings` - Building data
-- `GET /api/rooms` - Room data
-- `GET /api/cctvs` - CCTV camera data
-- `GET /api/chart/production-trends` - Production data
-- `GET /api/chart/unit-performance` - Performance metrics
+You can test the API endpoints directly:
+- http://localhost:8000/api/stats
+- http://localhost:8000/api/buildings
+- http://localhost:8000/api/rooms
+- http://localhost:8000/api/cctvs
+- http://localhost:8000/api/contacts
 
-## Development
+## 📁 Key Components
 
-### Frontend Development
-```bash
-npm run dev     # Development server
-npm run build   # Production build
-npm run start   # Production server
-```
+### Routing
+- API routes: `backend-new/routes/api.php`
+- Web routes: `backend-new/routes/web.php`
 
-### Backend Development
-```bash
-php artisan serve           # Development server
-php artisan migrate         # Run migrations
-php artisan db:seed         # Seed database
-php artisan migrate:fresh --seed  # Reset database
-```
+### Filament Admin Panel
+- Configuration: `backend-new/app/Providers/Filament/AdminPanelProvider.php`
+- Resources: `backend-new/app/Filament/Resources/`
+- Pages: `backend-new/app/Filament/Pages/`
+- Widgets: `backend-new/app/Filament/Widgets/`
 
-## Contributing
+### Frontend API Integration
+- API configuration: `v0-pertamina-frontend-build/lib/api.ts`
+- Base URL: `http://127.0.0.1:8000/api` (direct connection)
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a pull request
+## 🛠️ Development Workflow
 
-## License
+1. **Frontend Development**:
+   ```bash
+   cd v0-pertamina-frontend-build
+   npm run dev
+   ```
 
-This project is proprietary and confidential. All rights reserved.
+2. **Backend Development**:
+   ```bash
+   cd backend-new
+   php artisan serve
+   ```
 
-## Contact
+3. **Rebuild Frontend** (after changes):
+   ```bash
+   cd v0-pertamina-frontend-build
+   npm run build
+   xcopy .next\standalone\v0-pertamina-frontend-build ..\backend-new\frontend /E /I /H
+   ```
 
-For questions or support, please contact the repository owner.
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **Port already in use**:
+   - Kill processes using ports 8000 or 3000:
+     ```bash
+     netstat -ano | findstr :8000
+     taskkill /PID <process_id> /F
+     ```
+
+2. **Database connection errors**:
+   - Verify database credentials in `.env`
+   - Ensure MySQL service is running
+   - Check if database exists
+
+3. **Frontend not loading**:
+   - Ensure both servers are running
+   - Check Laravel logs: `backend-new/storage/logs/laravel.log`
+   - Verify Next.js server is accessible at http://localhost:3000
+
+4. **API calls failing**:
+   - Check CORS configuration
+   - Verify API routes in `backend-new/routes/api.php`
+   - Test endpoints directly with curl or Postman
+
+### Logs
+
+- Laravel logs: `backend-new/storage/logs/laravel.log`
+- Next.js server logs: Terminal output when running `node server.js`
+
+## 🎯 Features
+
+### Backend (Laravel + Filament)
+- RESTful API endpoints
+- Filament admin panel with CRUD operations
+- User authentication and authorization
+- Database migrations and seeders
+- Caching for performance optimization
+- Error handling and logging
+
+### Frontend (Next.js + React)
+- Responsive UI components
+- API integration with error handling
+- Dynamic routing
+- Server-side rendering
+- Static asset optimization
+- TypeScript type safety
+
+## 📱 Responsive Design
+
+The application is fully responsive and works on:
+- Desktop browsers
+- Tablet devices
+- Mobile phones
+
+All pages maintain proper layout across different screen sizes and orientations.
+
+## 🔒 Security
+
+- CSRF protection for forms
+- SQL injection prevention
+- XSS attack prevention
+- Secure API endpoints
+- Role-based access control
+
+## 🚀 Performance
+
+- Database query optimization
+- API response caching
+- Static asset compression
+- Lazy loading components
+- Code splitting
+
+## 📚 Additional Documentation
+
+For more detailed information about the integration, see:
+- [Integration Guide](INTEGRATION_GUIDE.md) - Detailed explanation of how Laravel, Filament, and Next.js work together

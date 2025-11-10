@@ -15,7 +15,8 @@
         "mallardduck/blade-boxicons": "^2.4",
         "polar-sh/sdk": "^0.7.0",
         "secondnetwork/blade-tabler-icons": "^3.35",
-        "spatie/laravel-permission": "^6.23"
+        "spatie/laravel-permission": "^6.23",
+        "symfony/config": "^7.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

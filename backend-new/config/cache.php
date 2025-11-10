@@ -27,8 +27,7 @@ return [
     | same cache driver to group types of items stored in your caches.
     |
     | Supported drivers: "array", "database", "file", "memcached",
-    |                    "redis", "dynamodb", "octane",
-    |                    "failover", "null"
+    |                    "redis", "dynamodb", "octane", "null"
     |
     */
 
@@ -44,11 +43,11 @@ return [
             'connection' => env('DB_CACHE_CONNECTION'),
             'table' => env('DB_CACHE_TABLE', 'cache'),
             'lock_connection' => env('DB_CACHE_LOCK_CONNECTION'),
-            'lock_table' => env('DB_CACHE_LOCK_TABLE'),
-            // Performance optimizations
-            'serialize' => true,
+            'lock_table' => env('DB_CACHE_LOCK_TABLE', 'cache_locks'),
+            'serialize' => false, // Optimize serialization
             'options' => [
-                'compression' => true,
+                'table' => 'cache',
+                'connection' => null,
             ],
         ],
 
@@ -81,13 +80,7 @@ return [
             'driver' => 'redis',
             'connection' => env('REDIS_CACHE_CONNECTION', 'cache'),
             'lock_connection' => env('REDIS_CACHE_LOCK_CONNECTION', 'default'),
-            // Enable serialization for better performance
-            'serialize' => true,
-            // Add performance optimizations
-            'options' => [
-                'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-cache:'),
-                'compression' => true,
-            ],
+            'serialize' => false, // Optimize serialization
         ],
 
         'dynamodb' => [
@@ -103,14 +96,6 @@ return [
             'driver' => 'octane',
         ],
 
-        'failover' => [
-            'driver' => 'failover',
-            'stores' => [
-                'database',
-                'array',
-            ],
-        ],
-
     ],
 
     /*
@@ -124,6 +109,6 @@ return [
     |
     */
 
-    'prefix' => env('CACHE_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-cache-'),
+    'prefix' => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_cache_'),
 
 ];

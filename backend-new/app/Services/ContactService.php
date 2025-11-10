@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Repositories\ContactRepository;
+use Illuminate\Support\Facades\Cache;
 
 class ContactService extends BaseService
 {
@@ -16,6 +17,9 @@ class ContactService extends BaseService
 
     public function getContactInfo()
     {
-        return $this->contactRepository->getFirst();
+        // Cache contact info for 30 seconds for better performance
+        return Cache::remember('contact_info', 30, function () {
+            return $this->contactRepository->getFirst();
+        });
     }
 }

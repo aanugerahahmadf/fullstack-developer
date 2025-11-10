@@ -1,47 +1,59 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Middleware\ApiCacheHeaders;
-use App\Http\Middleware\FastApiMiddleware;
-use App\Http\Middleware\PerformanceMonitor;
 use App\Http\Controllers\Api\BuildingController;
-use App\Http\Controllers\Api\RoomController;
-use App\Http\Controllers\Api\CctvController;
-use App\Http\Controllers\Api\ContactController;
-use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\ChartController;
+use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\CctvController;
+use App\Http\Controllers\Api\FrontendBridgeController;
+use App\Http\Controllers\Api\RoomController;
+use App\Http\Controllers\Api\StatsController;
+use App\Http\Middleware\Cors;
+use App\Http\Middleware\PerformanceMonitor;
+use Illuminate\Support\Facades\Route;
 
-Route::middleware(['cors', PerformanceMonitor::class, FastApiMiddleware::class, ApiCacheHeaders::class])->group(function () {
-    // Stats
-    Route::get('/stats', [StatsController::class, 'index']);
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and assigned to the "api"
+| middleware group. Enjoy building your API!
+|
+*/
 
-    // Chart Data
-    Route::get('/chart/production-trends', [ChartController::class, 'productionTrends']);
-    Route::get('/chart/unit-performance', [ChartController::class, 'unitPerformance']);
+// Public API routes with performance monitoring
+Route::middleware([PerformanceMonitor::class, Cors::class])->group(function () {
+    // Fast API endpoints with aggressive caching
+    Route::get('/stats', [StatsController::class, 'index'])->name('api.stats.index');
+    Route::get('/contact', [ContactController::class, 'index'])->name('api.contact.index');
 
-    // Buildings
-    Route::get('/buildings', [BuildingController::class, 'index']);
-    Route::get('/buildings/{id}', [BuildingController::class, 'show']);
+    // Chart API endpoints
+    Route::get('/chart/production-trends', [ChartController::class, 'productionTrends'])->name('api.chart.production-trends');
+    Route::get('/chart/unit-performance', [ChartController::class, 'unitPerformance'])->name('api.chart.unit-performance');
 
-    // Rooms
-    Route::get('/rooms', [RoomController::class, 'index']);
-    Route::get('/rooms/{id}', [RoomController::class, 'show']);
-    Route::get('/rooms/building/{buildingId}', [RoomController::class, 'getByBuilding']);
+    // Stateful API endpoints
+    Route::get('/buildings', [BuildingController::class, 'index'])->name('api.buildings.index');
+    Route::get('/buildings/{id}', [BuildingController::class, 'show'])->name('api.buildings.show');
 
-    // CCTVs
-    Route::get('/cctvs', [CctvController::class, 'index']);
-    Route::get('/cctvs/{id}', [CctvController::class, 'show']);
-    Route::get('/cctvs/room/{roomId}', [CctvController::class, 'getByRoom']);
-    Route::get('/cctvs/{id}/stream-url', [CctvController::class, 'getStreamUrl']);
+    // Room API endpoints
+    Route::get('/rooms', [RoomController::class, 'index'])->name('api.rooms.index');
+    Route::get('/rooms/{id}', [RoomController::class, 'show'])->name('api.rooms.show');
+    Route::get('/rooms/building/{buildingId}', [RoomController::class, 'getByBuilding'])->name('api.rooms.by-building');
 
-    // Contacts
-    Route::get('/contacts', [ContactController::class, 'index']);
+    // CCTV API endpoints
+    Route::get('/cctvs', [CctvController::class, 'index'])->name('api.cctvs.index');
+    Route::get('/cctvs/{id}', [CctvController::class, 'show'])->name('api.cctvs.show');
+    Route::get('/cctvs/room/{roomId}', [CctvController::class, 'getByRoom'])->name('api.cctvs.by-room');
+    Route::get('/cctvs/stream/{id}', [CctvController::class, 'getStreamUrl'])->name('api.cctvs.stream-url');
 
-    // Handle preflight requests
-    Route::options('/{any}', function () {
-        return response('', 200);
-    })->where('any', '.*');
+    // Frontend bridge routes
+    Route::get('/frontend/{any?}', [FrontendBridgeController::class, 'serveFrontend'])
+        ->where('any', '.*')
+        ->name('api.frontend.serve');
+
+    // Frontend assets
+    Route::get('/frontend-assets/{path}', [FrontendBridgeController::class, 'serveAsset'])
+        ->where('path', '.*')
+        ->name('api.frontend.asset');
 });
-
-// No authentication routes needed for this application

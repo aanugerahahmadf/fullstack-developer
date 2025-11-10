@@ -1,52 +1,57 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Mail, Phone, MapPin, Instagram } from "lucide-react"
-import { api } from '@/lib/api'
+import dynamic from 'next/dynamic'
+import { getContacts } from '@/lib/api'
 
-interface Contact {
-  id: string
-  email?: string
-  phone?: string
-  address?: string
-  instagram?: string
-}
-
-interface ContactMethod {
-  id: string
-  type: 'email' | 'phone' | 'address' | 'instagram'
-  title: string
-  value: string
-  icon: typeof Mail | typeof Phone | typeof MapPin | typeof Instagram
-  color: string
-  borderColor: string
-  hoverColor: string
-  textColor: string
-}
+// Dynamically import lucide-react icons to avoid HMR issues with Turbopack
+const Phone = dynamic(() => import('lucide-react').then((mod) => mod.Phone), { ssr: false })
+const Mail = dynamic(() => import('lucide-react').then((mod) => mod.Mail), { ssr: false })
+const MapPin = dynamic(() => import('lucide-react').then((mod) => mod.MapPin), { ssr: false })
+const Instagram = dynamic(() => import('lucide-react').then((mod) => mod.Instagram), { ssr: false })
+const X = dynamic(() => import('lucide-react').then((mod) => mod.X), { ssr: false })
+const Building2 = dynamic(() => import('lucide-react').then((mod) => mod.Building2), { ssr: false })
+const CheckCircle = dynamic(() => import('lucide-react').then((mod) => mod.CheckCircle), { ssr: false })
+const AlertTriangle = dynamic(() => import('lucide-react').then((mod) => mod.AlertTriangle), { ssr: false })
+const XCircle = dynamic(() => import('lucide-react').then((mod) => mod.XCircle), { ssr: false })
 
 export default function ContactPage() {
-  const [contacts, setContacts] = useState<Contact[]>([])
+  const [contacts, setContacts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [apiStatus, setApiStatus] = useState('connected')
+  const [systemStatus, setSystemStatus] = useState({status: 'active', message: 'All systems operational'})
+  
+  // State for dynamically imported icons
+  const [icons, setIcons] = useState({
+    Phone: null as any,
+    Mail: null as any,
+    MapPin: null as any,
+    Instagram: null as any,
+    X: null as any,
+    Building2: null as any,
+    CheckCircle: null as any,
+    AlertTriangle: null as any,
+    XCircle: null as any,
+  });
 
-  // Load data only once on component mount
+  // Load icons dynamically
+  useEffect(() => {
+    const loadIcons = async () => {
+      const { Phone, Mail, MapPin, Instagram, X, Building2, CheckCircle, AlertTriangle, XCircle } = await import('lucide-react');
+      setIcons({ Phone, Mail, MapPin, Instagram, X, Building2, CheckCircle, AlertTriangle, XCircle });
+    };
+    
+    loadIcons();
+  }, []);
+
+  // Load data only once on component mount - no automatic refreshing
   useEffect(() => {
     const fetchContacts = async () => {
       try {
-        const data = await api.getContacts()
-        // Handle case where data might be null, a single contact, or an array of contacts
-        if (Array.isArray(data)) {
-          setContacts(data)
-        } else if (data && typeof data === 'object' && 'id' in data) {
-          // If it's a single contact object, wrap it in an array
-          setContacts([data as Contact])
-        } else {
-          // If no data or null, set empty array
-          setContacts([])
-        }
+        const contactsData = await getContacts()
+        setContacts(contactsData)
       } catch (error) {
         console.error('Failed to fetch contacts:', error)
-        // Set empty array on error
-        setContacts([])
       } finally {
         setLoading(false)
       }
@@ -60,147 +65,115 @@ export default function ContactPage() {
     return () => clearTimeout(timer);
   }, []) // Empty dependency array - only run once on mount
 
-  // Flatten all contact methods into individual boxes
-  const getAllContactMethods = (): ContactMethod[] => {
-    const methods: ContactMethod[] = [];
-    
-    contacts.forEach(contact => {
-      // Add email box
-      if (contact.email) {
-        methods.push({
-          id: `email-${contact.id}`,
-          type: 'email',
-          title: 'Gmail',
-          value: contact.email,
-          icon: Mail,
-          color: 'bg-blue-600',
-          borderColor: 'border-blue-400',
-          hoverColor: 'hover:bg-blue-700',
-          textColor: 'text-blue-100'
-        });
-      }
-      
-      // Add phone box
-      if (contact.phone) {
-        methods.push({
-          id: `phone-${contact.id}`,
-          type: 'phone',
-          title: 'Phone',
-          value: contact.phone,
-          icon: Phone,
-          color: 'bg-green-600',
-          borderColor: 'border-green-400',
-          hoverColor: 'hover:bg-green-700',
-          textColor: 'text-green-100'
-        });
-      }
-      
-      // Add address box
-      if (contact.address) {
-        methods.push({
-          id: `address-${contact.id}`,
-          type: 'address',
-          title: 'Address',
-          value: contact.address,
-          icon: MapPin,
-          color: 'bg-purple-600',
-          borderColor: 'border-purple-400',
-          hoverColor: 'hover:bg-purple-700',
-          textColor: 'text-purple-100'
-        });
-      }
-      
-      // Add instagram box
-      if (contact.instagram) {
-        methods.push({
-          id: `instagram-${contact.id}`,
-          type: 'instagram',
-          title: 'Instagram',
-          value: `@${contact.instagram}`,
-          icon: Instagram,
-          color: 'bg-pink-600',
-          borderColor: 'border-pink-400',
-          hoverColor: 'hover:bg-pink-700',
-          textColor: 'text-pink-100'
-        });
-      }
-    });
-    
-    return methods;
+  // Function to get the appropriate icon and color for system status
+  const getSystemStatusDisplay = () => {
+    switch (systemStatus.status) {
+      case 'active':
+        return { icon: icons.CheckCircle, color: 'text-emerald-400', bgColor: 'bg-emerald-500/20' };
+      case 'warning':
+        return { icon: icons.AlertTriangle, color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' };
+      case 'error':
+        return { icon: icons.XCircle, color: 'text-red-400', bgColor: 'bg-red-500/20' };
+      default:
+        return { icon: icons.Building2, color: 'text-blue-400', bgColor: 'bg-blue-500/20' };
+    }
   };
 
-  const contactMethods = getAllContactMethods();
+  const systemStatusDisplay = getSystemStatusDisplay();
+  const SystemStatusIcon = systemStatusDisplay.icon;
 
   return (
     <main className="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-900 py-8 min-h-[calc(100vh-140px)]">
       {/* Header */}
       <div className="pt-4 pb-6 px-4">
         <div className="flex justify-center items-center gap-4">
-          <h1 className="text-3xl md:text-4xl font-semibold text-white text-center">Contact Us</h1>
+          <h1 className="text-3xl md:text-4xl font-semibold text-white text-center">Contact</h1>
         </div>
       </div>
 
-      {/* All Contact Methods - completely separate boxes */}
+      {/* System Status Card - responsive design */}
+      <div className="max-w-7xl mx-auto px-4 pb-6">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 md:p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white font-semibold text-sm mb-1">System Status</p>
+              <p className={`text-lg font-semibold ${systemStatusDisplay.color}`}>
+                {loading ? 'Loading...' : systemStatus.message}
+              </p>
+            </div>
+            <div className={`p-2 rounded-full ${systemStatusDisplay.bgColor}`}>
+              {SystemStatusIcon && <SystemStatusIcon className={`w-6 h-6 ${systemStatusDisplay.color}`} />}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contact Cards Grid - responsive layout */}
       <div className="max-w-7xl mx-auto px-4 pb-8">
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-3"></div>
-            <p className="text-white font-semibold">Loading contacts...</p>
+            <p className="text-white font-semibold">Loading contact information...</p>
           </div>
-        ) : contactMethods.length === 0 ? (
+        ) : contacts.length === 0 ? (
           <div className="text-center py-12">
-            <Mail className="w-12 h-12 text-white mx-auto mb-4" />
-            <p className="text-white font-semibold">No contacts available</p>
-            <p className="text-white text-sm mt-2">Contacts will appear once added in admin panel</p>
+            {icons.Building2 && <icons.Building2 className="w-12 h-12 text-white mx-auto mb-4" />}
+            <p className="text-white font-semibold">No contact information available</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-            {contactMethods.map((method) => {
-              const IconComponent = method.icon;
-              let href = '#';
-              let target = '_self';
-              let rel = '';
-              
-              // Set appropriate links for each type
-              switch(method.type) {
-                case 'email':
-                  href = `mailto:${method.value}`;
-                  break;
-                case 'phone':
-                  href = `tel:${method.value}`;
-                  break;
-                case 'address':
-                  href = `https://maps.google.com/?q=${encodeURIComponent(method.value)}`;
-                  target = '_blank';
-                  rel = 'noopener noreferrer';
-                  break;
-
-                case 'instagram':
-                  href = `https://instagram.com/${method.value.substring(1)}`;
-                  target = '_blank';
-                  rel = 'noopener noreferrer';
-                  break;
-              }
-              
-              return (
-                <a
-                  key={method.id}
-                  href={href}
-                  target={target}
-                  rel={rel}
-                  className={`${method.color} ${method.borderColor} border-2 rounded-lg p-6 hover:${method.hoverColor} transition-colors block`}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <IconComponent className="w-5 h-5 text-white" />
-                    <span className="font-semibold text-white">{method.title}</span>
-                  </div>
-                  <p className={`${method.textColor} text-sm`}>{method.value}</p>
-                </a>
-              );
-            })}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {contacts.map((contact) => (
+              <div key={contact.id} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 md:p-6">
+                <div className="space-y-4">
+                  {/* Email */}
+                  {contact.email && (
+                    <div className="flex items-center gap-3">
+                      {icons.Mail && <icons.Mail className="w-5 h-5 text-blue-400" />}
+                      <div>
+                        <p className="text-white text-sm font-semibold">Email</p>
+                        <p className="text-white text-sm">{contact.email}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Phone */}
+                  {contact.phone && (
+                    <div className="flex items-center gap-3">
+                      {icons.Phone && <icons.Phone className="w-5 h-5 text-green-400" />}
+                      <div>
+                        <p className="text-white text-sm font-semibold">Phone</p>
+                        <p className="text-white text-sm">{contact.phone}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Address */}
+                  {contact.address && (
+                    <div className="flex items-start gap-3">
+                      {icons.MapPin && <icons.MapPin className="w-5 h-5 text-red-400 mt-0.5" />}
+                      <div>
+                        <p className="text-white text-sm font-semibold">Address</p>
+                        <p className="text-white text-sm">{contact.address}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Instagram */}
+                  {contact.instagram && (
+                    <div className="flex items-center gap-3">
+                      {icons.Instagram && <icons.Instagram className="w-5 h-5 text-pink-400" />}
+                      <div>
+                        <p className="text-white text-sm font-semibold">Instagram</p>
+                        <p className="text-white text-sm">{contact.instagram}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
     </main>
-  );
+  )
 }

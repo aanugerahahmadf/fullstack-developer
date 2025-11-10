@@ -18,7 +18,7 @@ class RolePermissionSeeder extends Seeder
     {
         // Create roles
         $roles = [
-            ['name' => 'super_admin', 'display_name' => 'Super Admin', 'description' => 'Full access to all system features'],
+            ['name' => 'super_admin', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
         ];
 
         foreach ($roles as $role) {
@@ -30,11 +30,11 @@ class RolePermissionSeeder extends Seeder
 
         // Create permissions
         $permissions = [
-            ['name' => 'access_admin_panel', 'display_name' => 'Access Admin Panel', 'description' => 'Allow access to the admin panel'],
-            ['name' => 'manage_buildings', 'display_name' => 'Manage Buildings', 'description' => 'Create, update, delete buildings'],
-            ['name' => 'manage_rooms', 'display_name' => 'Manage Rooms', 'description' => 'Create, update, delete rooms'],
-            ['name' => 'manage_cctvs', 'display_name' => 'Manage CCTVs', 'description' => 'Create, update, delete CCTVs'],
-            ['name' => 'manage_contacts', 'display_name' => 'Manage Contacts', 'description' => 'Create, update, delete contacts'],
+            ['name' => 'access_admin_panel', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'manage_buildings', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'manage_rooms', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'manage_cctvs', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'manage_contacts', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
         ];
 
         foreach ($permissions as $permission) {
@@ -51,7 +51,7 @@ class RolePermissionSeeder extends Seeder
             $permissionIds = DB::table('permissions')->pluck('id');
 
             foreach ($permissionIds as $permissionId) {
-                DB::table('role_permissions')->updateOrInsert(
+                DB::table('role_has_permissions')->updateOrInsert(
                     ['role_id' => $superAdminRoleId, 'permission_id' => $permissionId],
                     ['role_id' => $superAdminRoleId, 'permission_id' => $permissionId]
                 );

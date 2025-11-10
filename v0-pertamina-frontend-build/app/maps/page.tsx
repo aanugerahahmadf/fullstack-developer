@@ -1,9 +1,16 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import dynamic from "next/dynamic"
-import { Video, X, Maximize, ArrowLeft } from "lucide-react"
-import { api } from '@/lib/api'
+import { 
+  getBuildings, 
+  getRoomsByBuilding, 
+  getCctvStreamUrl 
+} from '@/lib/api'
+import { handleApiError } from '@/lib/enhanced-utils'
+
+// Dynamically import lucide-react icons to avoid HMR issues with Turbopack
+const X = dynamic(() => import('lucide-react').then((mod) => mod.X), { ssr: false })
 
 // Dynamically import leaflet components for better performance
 const MapContainer = dynamic(
@@ -38,11 +45,13 @@ const Popup = dynamic(
 
 export default function MapsPage() {
   const [buildings, setBuildings] = useState<any[]>([])
+  const [rooms, setRooms] = useState<any[]>([])
+  const [cctvs, setCctvs] = useState<any[]>([])
   const [selectedBuilding, setSelectedBuilding] = useState<any>(null)
   const [selectedCctv, setSelectedCctv] = useState<any>(null)
   const [streamData, setStreamData] = useState<any>(null)
   const [showLiveStream, setShowLiveStream] = useState(false)
-  const [showRoomsModal, setShowRoomsModal] = useState(false);
+  const [showRoomsModal, setShowRoomsModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
   
@@ -51,152 +60,88 @@ export default function MapsPage() {
   
   // Load leaflet dynamically only on client side
   useEffect(() => {
-    setMounted(true);
+    setMounted(true)
+    
     const loadLeaflet = async () => {
       try {
-        const L = await import('leaflet');
-        leafletRef.current = L;
+        const leafletModule = await import('leaflet')
+        leafletRef.current = leafletModule
         
         // Fix for default marker icons in Leaflet
-        delete (L as any).Icon.Default.prototype._getIconUrl;
-        (L as any).Icon.Default.mergeOptions({
+        // @ts-ignore
+        delete leafletModule.Icon.Default.prototype._getIconUrl
+        // @ts-ignore
+        leafletModule.Icon.Default.mergeOptions({
           iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
           iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-        });
+        })
       } catch (error) {
-        console.error('Failed to load Leaflet:', error);
+        console.error('Failed to load Leaflet:', error)
       }
-    };
-    loadLeaflet();
-  }, []);
-  
-  // Fetch buildings data only once - no automatic refreshing
-  const fetchBuildings = useCallback(async () => {
-    try {
-      setLoading(true); // Ensure loading is set to true at the start
-      const data = await api.getBuildings()
-      console.log('Buildings data received:', data);
-      // Ensure data is an array
-      if (Array.isArray(data)) {
-        // Filter out buildings without names or coordinates
-        const validBuildings = data.filter(building => 
-          building.name && 
-          building.latitude && 
-          building.longitude
-        );
-        
-        // Group buildings with the same name
-        const groupedBuildings = validBuildings.reduce((acc: any[], building: any) => {
-          const existingBuilding = acc.find((b: any) => b.name === building.name);
-          if (existingBuilding) {
-            // If building already exists, keep track of all IDs
-            existingBuilding.ids = [...existingBuilding.ids, building.id];
-            // Merge rooms from all buildings with the same name
-            if (building.rooms && Array.isArray(building.rooms)) {
-              existingBuilding.rooms = existingBuilding.rooms || [];
-              existingBuilding.rooms = [...existingBuilding.rooms, ...building.rooms];
-            }
-          } else {
-            // If new building, add it with room count
-            acc.push({
-              ...building,
-              ids: [building.id]
-            });
-          }
-          return acc;
-        }, []);
-        
-        // Process rooms to handle duplicates with the same name
-        const processedBuildings = groupedBuildings.map(building => {
-          if (building.rooms && Array.isArray(building.rooms)) {
-            // Group rooms by name to handle duplicates
-            const uniqueRooms = Array.from(
-              new Map(building.rooms.map((room: any) => [room.name, room])).values()
-            );
-            return { ...building, rooms: uniqueRooms };
-          }
-          return building;
-        });
-        
-        console.log('Processed buildings:', processedBuildings);
-        setBuildings(processedBuildings);
-      } else {
-        setBuildings([]);
-      }
-    } catch (error) {
-      console.error('Failed to fetch buildings:', error);
-      setBuildings([]);
-    } finally {
-      setLoading(false);
     }
-  }, []);
-  
-  // Initialize data fetching only once on mount
-  useEffect(() => {
-    if (mounted) {
-      // Use a small delay to ensure UI is ready before fetching data
-      const timer = setTimeout(() => {
-        fetchBuildings()
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [mounted]) // Removed fetchBuildings from dependencies to prevent re-fetching
-
-  const handleBuildingClick = async (building: any) => {
-    console.log('Building clicked:', building);
     
-    // Fetch rooms for all buildings with the same name
-    try {
-      let allRooms: any[] = [];
-      
-      // If building has multiple IDs (grouped buildings), fetch rooms for all of them
-      if (building.ids && Array.isArray(building.ids)) {
-        // Fetch rooms for each building ID
-        const roomsPromises = building.ids.map((id: string) => api.getRoomsByBuilding(id));
-        const roomsResults = await Promise.all(roomsPromises);
+    loadLeaflet()
+  }, [])
+  
+  // Fetch buildings data
+  useEffect(() => {
+    if (!mounted) return
+    
+    const fetchBuildings = async () => {
+      try {
+        setLoading(true)
+        const data = await getBuildings()
         
-        // Flatten all rooms into a single array
-        allRooms = roomsResults.flat();
-      } else {
-        // Single building, fetch rooms normally
-        const rooms = await api.getRoomsByBuilding(building.id);
-        allRooms = Array.isArray(rooms) ? rooms : [];
-      }
-      
-      console.log('All rooms fetched:', allRooms);
-      
-      // Filter out any rooms without names
-      const validRooms = allRooms.filter(room => room.name);
-      
-      // Group rooms by name and merge CCTVs from duplicate rooms
-      const roomMap = new Map();
-      validRooms.forEach((room: any) => {
-        if (roomMap.has(room.name)) {
-          // If room already exists, merge CCTVs
-          const existingRoom = roomMap.get(room.name);
-          if (room.cctvs && Array.isArray(room.cctvs)) {
-            existingRoom.cctvs = existingRoom.cctvs || [];
-            existingRoom.cctvs = [...existingRoom.cctvs, ...room.cctvs];
-          }
+        // Ensure data is an array
+        if (Array.isArray(data)) {
+          // Filter out buildings without names or coordinates
+          const validBuildings = data.filter((building: any) => 
+            building.name && building.latitude && building.longitude
+          )
+          
+          setBuildings(validBuildings)
         } else {
-          // If new room, add it
-          roomMap.set(room.name, { ...room });
+          setBuildings([])
         }
+      } catch (error) {
+        console.error('Failed to fetch buildings:', error)
+        setBuildings([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchBuildings()
+  }, [mounted])
+  
+  const handleBuildingClick = async (building: any) => {
+    try {
+      // Fetch rooms for this building
+      const buildingRooms = await getRoomsByBuilding(building.id)
+      
+      // Add CCTVs to each room
+      const buildingRoomsWithCctvs = buildingRooms.map((room: any) => {
+        // Filter CCTVs for this room
+        const roomCctvs = cctvs.filter((cctv: any) => cctv.room_id === room.id);
+        return {
+          ...room,
+          cctvs: roomCctvs
+        };
       });
       
-      const uniqueRooms = Array.from(roomMap.values());
-      console.log('Unique rooms with merged CCTVs:', uniqueRooms);
-      
-      const buildingWithRooms = { ...building, rooms: uniqueRooms };
+      // Add rooms to the building object
+      const buildingWithRooms = { 
+        ...building, 
+        rooms: buildingRoomsWithCctvs 
+      };
       
       // Set selected building and show rooms modal
       setSelectedBuilding(buildingWithRooms);
       setShowRoomsModal(true);
     } catch (error) {
-      console.error('Failed to fetch rooms for building:', error);
-      // Still set the building as selected even if room fetch fails
+      console.error('Failed to process building data:', error);
+      // Still set the building as selected even if room processing fails
       setSelectedBuilding({ ...building, rooms: [] });
       setShowRoomsModal(true);
     }
@@ -207,7 +152,7 @@ export default function MapsPage() {
       setSelectedCctv(cctv)
       setShowLiveStream(true)
       // Fetch stream URL
-      const streamData = await api.getCctvStreamUrl(cctv.id)
+      const streamData = await getCctvStreamUrl(cctv.id)
       setStreamData(streamData)
     } catch (error) {
       console.error('Failed to fetch stream URL:', error)
@@ -228,7 +173,7 @@ export default function MapsPage() {
   
   // Memoized icon creation function - only for building markers now
   const createCustomIcon = useCallback((isBuilding: boolean = true) => {
-    if (!leafletRef.current) return undefined;
+    if (!leafletRef.current) return undefined
     
     // Simpler blue circle marker similar to reference
     const svgIcon = `
@@ -236,45 +181,45 @@ export default function MapsPage() {
         <circle cx="12" cy="12" r="10" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2"/>
         <circle cx="12" cy="12" r="4" fill="#ffffff"/>
       </svg>
-    `;
+    `
     
     return new leafletRef.current.Icon({
       iconUrl: `data:image/svg+xml;base64,${btoa(svgIcon)}`,
       iconSize: [24, 24],
       iconAnchor: [12, 12],
       popupAnchor: [0, -12]
-    });
-  }, []);
+    })
+  }, [])
   
   const handleFullscreen = () => {
-    const element = document.querySelector('.live-stream-video-container');
-    if (!element) return;
+    const element = document.querySelector('.live-stream-video-container')
+    if (!element) return
     
     // Check if already in fullscreen
     if (document.fullscreenElement || (document as any).webkitFullscreenElement || (document as any).mozFullScreenElement || (document as any).msFullscreenElement) {
       // Exit fullscreen
       if (document.exitFullscreen) {
-        document.exitFullscreen();
+        document.exitFullscreen()
       } else if ((document as any).webkitExitFullscreen) { /* Safari */
-        (document as any).webkitExitFullscreen();
+        (document as any).webkitExitFullscreen()
       } else if ((document as any).msExitFullscreen) { /* IE11 */
-        (document as any).msExitFullscreen();
+        (document as any).msExitFullscreen()
       } else if ((document as any).mozCancelFullScreen) { /* Firefox */
-        (document as any).mozCancelFullScreen();
+        (document as any).mozCancelFullScreen()
       }
     } else {
       // Enter fullscreen
       if (element.requestFullscreen) {
-        element.requestFullscreen();
+        element.requestFullscreen()
       } else if ((element as any).webkitRequestFullscreen) { /* Safari */
-        (element as any).webkitRequestFullscreen();
+        (element as any).webkitRequestFullscreen()
       } else if ((element as any).msRequestFullscreen) { /* IE11 */
-        (element as any).msRequestFullscreen();
+        (element as any).msRequestFullscreen()
       } else if ((element as any).mozRequestFullScreen) { /* Firefox */
-        (element as any).mozRequestFullScreen();
+        (element as any).mozRequestFullScreen()
       }
     }
-  };
+  }
   
   if (!mounted) {
     return (
@@ -379,17 +324,41 @@ export default function MapsPage() {
             </div>
 
             {/* Video Player - responsive aspect ratio */}
-            <div className="aspect-video bg-black/50 flex items-center justify-center flex-grow live-stream-video-container">
-              <div className="text-center p-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-white mx-auto mb-3">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
-                </svg>
-                <p className="text-white font-semibold">Live stream player</p>
-                <div className="mt-4 text-xs text-white">
-                  <p className="truncate">{selectedCctv.ip_address}</p>
-                  <p>{selectedCctv.username}</p>
+            <div className="aspect-video bg-black/50 flex items-center justify-center flex-grow relative live-stream-video-container">
+              {streamData && streamData.stream_url ? (
+                <video 
+                  src={streamData.stream_url} 
+                  autoPlay 
+                  controls 
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    console.error('Video playback error:', e);
+                    // Handle playback errors gracefully
+                  }}
+                >
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <div className="text-center p-4">
+                  {streamData === null ? (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-white mx-auto mb-3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                      </svg>
+                      <p className="text-white font-semibold">Live stream player</p>
+                      <div className="mt-4 text-xs text-white">
+                        <p className="truncate">{selectedCctv.ip_address}</p>
+                        <p>{selectedCctv.username}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-3"></div>
+                      <p className="text-white font-semibold">Loading stream...</p>
+                    </>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
             
             {/* Stream Controls - responsive design */}
@@ -418,8 +387,8 @@ export default function MapsPage() {
               </h2>
               <button 
                 onClick={() => {
-                  setShowRoomsModal(false);
-                  setSelectedBuilding(null);
+                  setShowRoomsModal(false)
+                  setSelectedBuilding(null)
                 }} 
                 className="text-white hover:text-white transition p-1"
                 aria-label="Close"
@@ -445,8 +414,8 @@ export default function MapsPage() {
                               <button
                                 key={`cctv-${cctv.id}`}
                                 onClick={() => {
-                                  handleLiveStream(cctv);
-                                  setShowRoomsModal(false);
+                                  handleLiveStream(cctv)
+                                  setShowRoomsModal(false)
                                 }}
                                 className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm font-semibold py-2 px-3 rounded-lg flex items-center justify-center gap-2 shadow-md transition-all duration-200 transform hover:scale-[1.02]"
                               >
@@ -463,9 +432,9 @@ export default function MapsPage() {
                                   id: `room-${room.id}-default`,
                                   name: `${room.name || 'Room'} Camera`,
                                   room: room
-                                };
-                                handleLiveStream(dummyCctv);
-                                setShowRoomsModal(false);
+                                }
+                                handleLiveStream(dummyCctv)
+                                setShowRoomsModal(false)
                               }}
                               className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm font-semibold py-2 px-3 rounded-lg flex items-center justify-center gap-2 shadow-md transition-all duration-200 transform hover:scale-[1.02]"
                             >
@@ -498,3 +467,5 @@ export default function MapsPage() {
     </main>
   )
 }
+
+
