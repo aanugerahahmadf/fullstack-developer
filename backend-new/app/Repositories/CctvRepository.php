@@ -34,14 +34,12 @@ class CctvRepository extends BaseRepository
             // In a real implementation, you would make an API call to your streaming server:
             try {
                 // Uncomment this when you have FFmpeg properly installed and configured
-                /*
                 $response = Http::timeout(10)->get('http://127.0.0.1:3002/api/start-stream/' . $id);
 
                 if ($response->successful()) {
                     $streamData = $response->json();
                     $streamUrl = $streamData['streamUrl'];
                 }
-                */
             } catch (\Exception $e) {
                 Log::error('Failed to start stream', [
                     'cctv_id' => $id,
