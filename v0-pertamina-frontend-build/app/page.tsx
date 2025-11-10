@@ -3,17 +3,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { 
-  Zap, 
-  BarChart3, 
-  Activity, 
-  CheckCircle, 
-  AlertTriangle, 
-  XCircle,
-  Calendar,
-  ChevronLeft,
-  ChevronRight
-} from "lucide-react"
-import { 
   LineChart, 
   Line, 
   BarChart, 
@@ -25,7 +14,15 @@ import {
   Legend, 
   ResponsiveContainer 
 } from 'recharts'
-import { api } from '@/lib/api'
+import { 
+  getStats, 
+  getBuildings, 
+  getRooms, 
+  getCctvs, 
+  getProductionTrends, 
+  getUnitPerformance 
+} from '@/lib/api'
+import { handleApiError, DataCache, formatDateString } from '@/lib/enhanced-utils'
 
 // Define TypeScript interfaces
 interface Stats {
@@ -34,9 +31,26 @@ interface Stats {
   total_cctvs: number
 }
 
-interface SystemStatus {
-  status: 'active' | 'warning' | 'error' | 'unknown'
-  message: string
+interface Building {
+  id: string
+  name: string
+  // Add other building properties as needed
+}
+
+interface Room {
+  id: string
+  name: string
+  building_id: string
+  // Add other room properties as needed
+}
+
+interface Cctv {
+  id: string
+  name: string
+  ip_address: string
+  rtsp_url: string
+  room_id: string
+  // Add other CCTV properties as needed
 }
 
 interface ProductionTrend {
@@ -49,12 +63,6 @@ interface UnitPerformance {
   unit: string
   efficiency: number
   capacity: number
-}
-
-interface Building {
-  id: string  // Changed from number to string to match API response
-  name: string
-  // Add other building properties as needed
 }
 
 interface DateRange {
@@ -71,12 +79,12 @@ export default function Home() {
     total_rooms: 0,
     total_cctvs: 0
   });
-  const [productionTrends, setProductionTrends] = useState<any[]>([]);
-  const [unitPerformance, setUnitPerformance] = useState<any[]>([]);
+  const [productionTrends, setProductionTrends] = useState<ProductionTrend[]>([]);
+  const [unitPerformance, setUnitPerformance] = useState<UnitPerformance[]>([]);
   const [loading, setLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(true);
-  const [apiStatus, setApiStatus] = useState<string>('checking');
-  const [systemStatus, setSystemStatus] = useState<{status: string, message: string}>({status: 'checking', message: 'Checking system status...'});
+  const [apiStatus, setApiStatus] = useState<string>('connected');
+  const [systemStatus, setSystemStatus] = useState<{status: string, message: string}>({status: 'active', message: 'All systems operational'});
   const [dateRange, setDateRange] = useState<{start: string, end: string}>(() => {
     const now = new Date();
     // Prevent defaulting to November 2025 or October 2025
@@ -103,19 +111,58 @@ export default function Home() {
     };
   });
   
-
+  // State for dynamically imported icons
+  const [icons, setIcons] = useState<any>({});
+  
+  // Load icons dynamically to avoid HMR issues with Turbopack
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadIcons = async () => {
+      try {
+        const lucide = await import('lucide-react');
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setIcons({
+            Zap: lucide.Zap,
+            BarChart3: lucide.BarChart3,
+            Activity: lucide.Activity,
+            CheckCircle: lucide.CheckCircle,
+            AlertTriangle: lucide.AlertTriangle,
+            XCircle: lucide.XCircle,
+            Calendar: lucide.Calendar,
+            ChevronLeft: lucide.ChevronLeft,
+            ChevronRight: lucide.ChevronRight,
+            Refresh: lucide.RefreshCw
+          });
+        }
+      } catch (error) {
+        console.warn('Failed to load icons:', error);
+        // Set empty icons object to prevent errors
+        if (isMounted) {
+          setIcons({});
+        }
+      }
+    };
+    
+    loadIcons();
+    
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Helper function to format dates
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString;
+    }
   };
-
-
-
-
-
-
 
   // Function to get date range for current month
   const getCurrentMonthDateRange = useCallback(() => {
@@ -142,7 +189,59 @@ export default function Home() {
     };
   }, []);
 
-  // Load data function that loads only once
+  // Enhanced system status checker
+  const checkSystemStatus = async () => {
+    try {
+      // Check if we can reach the API endpoints
+      const statsResponse = await fetch('http://127.0.0.1:8000/api/stats', { 
+        method: 'GET',
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
+      
+      if (!statsResponse.ok) {
+        throw new Error(`API not responding: ${statsResponse.status}`);
+      }
+      
+      const statsData = await statsResponse.json();
+      
+      // If we get here, the API is responding
+      if (statsData.success) {
+        const { total_buildings, total_rooms, total_cctvs } = statsData.data;
+        
+        // Check for maintenance mode (all zeros)
+        if (total_buildings === 0 && total_rooms === 0 && total_cctvs === 0) {
+          return { status: 'maintenance', message: 'System in maintenance mode' };
+        }
+        
+        // Check for partial data
+        if (total_buildings === 0 || total_rooms === 0 || total_cctvs === 0) {
+          return { status: 'warning', message: 'Partial system availability' };
+        }
+        
+        // All systems operational
+        const totalDevices = total_buildings + total_rooms + total_cctvs;
+        return { status: 'active', message: `All systems operational (${totalDevices} devices)` };
+      } else {
+        return { status: 'error', message: 'API returned error' };
+      }
+    } catch (error) {
+      console.error('System status check failed:', error);
+      
+      // Determine specific error type
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          return { status: 'error', message: 'System timeout - Offline' };
+        }
+        if (error.message.includes('fetch')) {
+          return { status: 'error', message: 'Network error - Offline' };
+        }
+      }
+      
+      return { status: 'error', message: 'System check failed - Offline' };
+    }
+  };
+
+  // Enhanced load data function with system status checking
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -151,29 +250,52 @@ export default function Home() {
       setApiStatus('checking');
       setSystemStatus({status: 'checking', message: 'Checking system status...'});
 
+      // Perform system status check
+      const statusResult = await checkSystemStatus();
+      setSystemStatus(statusResult);
+      
+      if (statusResult.status === 'error' || statusResult.status === 'maintenance') {
+        // Don't proceed with data loading if system is down or in maintenance
+        setStats({
+          total_buildings: 0,
+          total_rooms: 0,
+          total_cctvs: 0
+        });
+        setProductionTrends([]);
+        setUnitPerformance([]);
+        setLoading(false);
+        setChartLoading(false);
+        return;
+      }
+
+      // Add a small delay to show the checking status
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Fetch all data in parallel for maximum performance
       console.log('Fetching stats...');
-      const statsData = await api.getStats();
+      const statsData = await getStats();
       console.log('Stats data:', statsData);
       
       console.log('Fetching buildings...');
-      const buildings = await api.getBuildings();
+      const buildings: Building[] = await getBuildings();
       console.log('Buildings data:', buildings);
       
       console.log('Fetching rooms...');
-      const rooms = await api.getRooms();
+      const rooms: Room[] = await getRooms();
       console.log('Rooms data:', rooms);
       
       console.log('Fetching CCTVs...');
-      const cctvs = await api.getCctvs();
+      const cctvs: Cctv[] = await getCctvs();
       console.log('CCTVs data:', cctvs);
       
       console.log('Fetching production trends...');
-      let productionData = [];
+      let productionData: ProductionTrend[] = [];
+      let usingMockProductionData = false;
       try {
-        productionData = await api.getProductionTrends(dateRange.start, dateRange.end);
+        productionData = await getProductionTrends(dateRange.start, dateRange.end);
         console.log('Production trends data:', productionData);
       } catch (error) {
+        handleApiError(error, 'Production Trends');
         console.error('Failed to fetch production trends, using mock data:', error);
         // Generate mock data when API fails
         const today = new Date();
@@ -189,14 +311,17 @@ export default function Home() {
           { date: `${year}-${month}-25`, production: 1550, target: 1500 },
           { date: `${year}-${month}-30`, production: 1450, target: 1500 },
         ];
+        usingMockProductionData = true;
       }
       
       console.log('Fetching unit performance...');
-      let unitPerformanceData = [];
+      let unitPerformanceData: UnitPerformance[] = [];
+      let usingMockUnitData = false;
       try {
-        unitPerformanceData = await api.getUnitPerformance();
+        unitPerformanceData = await getUnitPerformance();
         console.log('Unit performance data:', unitPerformanceData);
       } catch (error) {
+        handleApiError(error, 'Unit Performance');
         console.error('Failed to fetch unit performance, using mock data:', error);
         // Generate mock data when API fails
         unitPerformanceData = [
@@ -206,6 +331,7 @@ export default function Home() {
           { unit: 'Unit D', efficiency: 95, capacity: 1500 },
           { unit: 'Unit E', efficiency: 88, capacity: 1100 },
         ];
+        usingMockUnitData = true;
       }
 
       // Update stats - calculate based on actual data structure
@@ -218,13 +344,21 @@ export default function Home() {
       };
       
       setStats(calculatedStats);
+      setProductionTrends(productionData);
+      setUnitPerformance(unitPerformanceData);
       setApiStatus('connected');
 
-      // Determine system status based on data
-      if (buildings.length === 0) {
+      // Final system status update based on actual data and whether mock data is being used
+      if (buildings.length === 0 && rooms.length === 0 && cctvs.length === 0) {
+        // All data empty - might be maintenance mode
+        setSystemStatus({
+          status: 'maintenance',
+          message: 'System in maintenance mode'
+        });
+      } else if (buildings.length === 0) {
         setSystemStatus({
           status: 'warning',
-          message: 'No buildings configured'
+          message: 'Limited data available'
         });
       } else if (rooms.length === 0) {
         setSystemStatus({
@@ -234,134 +368,123 @@ export default function Home() {
       } else if (cctvs.length === 0) {
         setSystemStatus({
           status: 'warning',
-          message: 'No CCTV cameras configured'
+          message: 'No CCTV devices connected'
+        });
+      } else if (usingMockProductionData || usingMockUnitData) {
+        // Using mock data - show warning status
+        setSystemStatus({
+          status: 'warning',
+          message: 'Using mock data - system in test mode'
         });
       } else {
-        // Check if CCTVs have IP addresses
-        const cctvsWithoutIP = cctvs.filter((cctv: any) => !cctv.ip_address);
-        if (cctvsWithoutIP.length > 0) {
-          setSystemStatus({
-            status: 'warning',
-            message: `${cctvsWithoutIP.length} CCTV cameras missing IP addresses`
-          });
-        } else {
-          setSystemStatus({
-            status: 'active',
-            message: 'All systems operational'
-          });
-        }
+        // Check data integrity
+        const allSystemsCount = buildings.length + rooms.length + cctvs.length;
+        
+        setSystemStatus({
+          status: 'active',
+          message: `All systems operational (${allSystemsCount} devices)`
+        });
       }
-
-      // Process chart data - filter out November 2025 and October 2025 data if present
-      // But ensure we always have data to display
-      let processedProductionTrends = productionData
-        .filter((item: any) => {
-          // Filter out November 2025 data
-          const itemDate = new Date(item.date);
-          if (itemDate.getFullYear() === 2025 && itemDate.getMonth() === 10) { // November is month 10 (0-indexed)
-            return false;
-          }
-          // Also filter out October 2025 data
-          if (itemDate.getFullYear() === 2025 && itemDate.getMonth() === 9) { // October is month 9 (0-indexed)
-            return false;
-          }
-          return true;
-        })
-        .map((item: any) => ({
-          date: formatDate(item.date),
-          production: item.production,
-          target: item.target
-        }));
-
-      // If all data was filtered out, generate mock data
-      if (processedProductionTrends.length === 0) {
-        const today = new Date();
-        const monthName = today.toLocaleDateString('en-US', { month: 'long' });
-        processedProductionTrends = [
-          { date: `01 ${monthName}`, production: 1200, target: 1500 },
-          { date: `05 ${monthName}`, production: 1400, target: 1500 },
-          { date: `10 ${monthName}`, production: 1100, target: 1500 },
-          { date: `15 ${monthName}`, production: 1600, target: 1500 },
-          { date: `20 ${monthName}`, production: 1300, target: 1500 },
-          { date: `25 ${monthName}`, production: 1550, target: 1500 },
-          { date: `30 ${monthName}`, production: 1450, target: 1500 },
-        ];
-      }
-
-      // Update charts
-      setProductionTrends(processedProductionTrends);
-      setUnitPerformance(unitPerformanceData);
-
-      console.log('All data loaded successfully');
     } catch (error) {
-      console.error('Failed to load data:', error);
-      setApiStatus('error');
-      setSystemStatus({
-        status: 'error',
-        message: 'Unable to load system data - ' + (error as Error).message
+      console.error('Failed to load dashboard data:', error);
+      handleApiError(error, 'Dashboard');
+      
+      // Set default values on error
+      setStats({
+        total_buildings: 0,
+        total_rooms: 0,
+        total_cctvs: 0
       });
       
-      // Set mock data when everything fails
-      const today = new Date();
-      const monthName = today.toLocaleDateString('en-US', { month: 'long' });
+      setProductionTrends([]);
+      setUnitPerformance([]);
       
-      const mockProductionTrends = [
-        { date: `01 ${monthName}`, production: 1200, target: 1500 },
-        { date: `05 ${monthName}`, production: 1400, target: 1500 },
-        { date: `10 ${monthName}`, production: 1100, target: 1500 },
-        { date: `15 ${monthName}`, production: 1600, target: 1500 },
-        { date: `20 ${monthName}`, production: 1300, target: 1500 },
-        { date: `25 ${monthName}`, production: 1550, target: 1500 },
-        { date: `30 ${monthName}`, production: 1450, target: 1500 },
-      ];
-      
-      const mockUnitPerformance = [
-        { unit: 'Unit A', efficiency: 85, capacity: 1000 },
-        { unit: 'Unit B', efficiency: 92, capacity: 1200 },
-        { unit: 'Unit C', efficiency: 78, capacity: 800 },
-        { unit: 'Unit D', efficiency: 95, capacity: 1500 },
-        { unit: 'Unit E', efficiency: 88, capacity: 1100 },
-      ];
-      
-      setProductionTrends(mockProductionTrends);
-      setUnitPerformance(mockUnitPerformance);
+      setApiStatus('disconnected');
+      setSystemStatus({
+        status: 'error',
+        message: 'Connection failed - Retrying...'
+      });
+
+      // Retry once after 2 seconds
+      setTimeout(() => {
+        loadData();
+      }, 2000);
     } finally {
       setLoading(false);
       setChartLoading(false);
     }
   }, [dateRange]);
 
-  // Load data only once on component mount
+  // Load data immediately on component mount
   useEffect(() => {
-    // Use a small delay to ensure UI is ready before fetching data
-    const timer = setTimeout(() => {
-      loadData();
-    }, 100);
+    let isMounted = true;
     
-    return () => clearTimeout(timer);
-  }, []); // Empty dependency array - only run once on mount
+    // Load data immediately without delay
+    const loadDataWrapper = async () => {
+      if (isMounted) {
+        await loadData();
+      }
+    };
+    
+    loadDataWrapper();
+    
+    // Set up periodic refresh every 30 seconds
+    const intervalId = setInterval(() => {
+      if (isMounted) {
+        loadData();
+      }
+    }, 30000);
+    
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, []);
 
   // Handle date range changes
   useEffect(() => {
-    loadData();
+    let isMounted = true;
+    
+    const loadDataWrapper = async () => {
+      if (isMounted) {
+        await loadData();
+      }
+    };
+    
+    loadDataWrapper();
+    
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      isMounted = false;
+    };
   }, [dateRange, loadData]);
 
   // Function to get the appropriate icon and color for system status
   const getSystemStatusDisplay = () => {
     switch (systemStatus.status) {
       case 'active':
-        return { icon: CheckCircle, color: 'text-emerald-400', bgColor: 'bg-emerald-500/20' };
+        return { icon: icons.CheckCircle, color: 'text-emerald-400', bgColor: 'bg-emerald-500/20' };
       case 'warning':
-        return { icon: AlertTriangle, color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' };
+        return { icon: icons.AlertTriangle, color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' };
       case 'error':
-        return { icon: XCircle, color: 'text-red-400', bgColor: 'bg-red-500/20' };
+        return { icon: icons.XCircle, color: 'text-red-400', bgColor: 'bg-red-500/20' };
+      case 'maintenance':
+        return { icon: icons.Activity, color: 'text-blue-400', bgColor: 'bg-blue-500/20' };
+      case 'checking':
+        return { icon: icons.Activity, color: 'text-blue-400', bgColor: 'bg-blue-500/20' };
       default:
-        return { icon: Activity, color: 'text-blue-400', bgColor: 'bg-blue-500/20' };
+        return { icon: icons.Activity, color: 'text-blue-400', bgColor: 'bg-blue-500/20' };
     }
   };
 
   const systemStatusDisplay = getSystemStatusDisplay();
   const SystemStatusIcon = systemStatusDisplay.icon;
+
+  // Manual refresh function
+  const handleRefresh = () => {
+    loadData();
+  };
 
   return (
     <main className="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-900 py-12 min-h-[calc(100vh-180px)]">
@@ -377,60 +500,68 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Production Rate - Total Buildings */}
           <div 
-            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6"
+            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 flex flex-col items-center justify-center text-center"
           >
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-center">
+              <div className="text-center">
                 <p className="text-white font-semibold text-sm mb-2">Total Building</p>
                 <p className="text-3xl font-semibold text-white">
                   {loading ? '-' : stats.total_buildings}
                 </p>
               </div>
-              <Zap className="w-10 h-10 text-yellow-400" />
+              {icons.Zap && <icons.Zap className="w-10 h-10 text-yellow-400 ml-4" />}
             </div>
           </div>
 
           {/* Efficiency - Total Rooms */}
           <div 
-            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-300"
+            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center text-center"
           >
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-center">
+              <div className="text-center">
                 <p className="text-white font-semibold text-sm mb-2">Total Room</p>
                 <p className="text-3xl font-semibold text-white">
                   {loading ? '-' : stats.total_rooms}
                 </p>
               </div>
-              <BarChart3 className="w-10 h-10 text-blue-400" />
+              {icons.BarChart3 && <icons.BarChart3 className="w-10 h-10 text-blue-400 ml-4" />}
             </div>
           </div>
 
           {/* Units Active - Total CCTVs */}
           <div 
-            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-300"
+            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center text-center"
           >
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-center">
+              <div className="text-center">
                 <p className="text-white font-semibold text-sm mb-2">Total CCTV</p>
                 <p className="text-3xl font-semibold text-white">
                   {loading ? '-' : stats.total_cctvs}
                 </p>
               </div>
-              <Activity className="w-10 h-10 text-green-400" />
+              {icons.Activity && <icons.Activity className="w-10 h-10 text-green-400 ml-4" />}
             </div>
           </div>
 
           {/* System Status - Functional Status */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center text-center">
+            <div className="flex flex-col items-center justify-center">
+              <div className="text-center mb-2">
                 <p className="text-white font-semibold text-sm mb-2">System Status</p>
-                <p className={`text-lg font-semibold text-white ${systemStatusDisplay.color}`}>
-                  {loading ? 'Loading...' : systemStatus.message}
-                </p>
+                <div className="flex items-center justify-center">
+                  <p className={`text-lg font-semibold text-white ${systemStatusDisplay.color} mr-2`}>
+                    {loading ? 'Checking...' : systemStatus.message}
+                  </p>
+                  {!loading && (
+                    <div className="relative">
+                      <div className={`absolute inset-0 rounded-full ${systemStatusDisplay.bgColor} animate-ping opacity-75`}></div>
+                      <div className={`relative w-3 h-3 rounded-full ${systemStatusDisplay.bgColor.replace('/20', '')}`}></div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className={`p-2 rounded-full ${systemStatusDisplay.bgColor}`}>
-                <SystemStatusIcon className={`w-6 h-6 ${systemStatusDisplay.color}`} />
+              <div className={`p-3 rounded-full ${systemStatusDisplay.bgColor}`}>
+                {SystemStatusIcon && <SystemStatusIcon className={`w-8 h-8 ${systemStatusDisplay.color}`} />}
               </div>
             </div>
           </div>
@@ -445,8 +576,13 @@ export default function Home() {
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold text-white text-center w-full">
                 Production Trends - {(() => {
-                  const displayDate = new Date(dateRange.start);
-                  return displayDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                  try {
+                    const displayDate = new Date(dateRange.start);
+                    return displayDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                  } catch (error) {
+                    console.error('Error formatting date:', error);
+                    return 'Unknown Date';
+                  }
                 })()}
               </h3>
             </div>
@@ -600,8 +736,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-
-
     </main>
   )
 }
+

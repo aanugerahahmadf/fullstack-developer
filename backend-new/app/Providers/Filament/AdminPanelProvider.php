@@ -32,7 +32,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             //->brandName('Kilang Pertamina Internasional')
             ->brandLogo(asset('images/logo-pertamina.png'))
-            ->brandLogoHeight('6rem')
+            ->brandLogoHeight('8rem')
             ->colors([
                 'primary' => Color::Red,
             ])

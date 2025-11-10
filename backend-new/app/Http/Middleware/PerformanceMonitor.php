@@ -5,44 +5,38 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Response;
 
 class PerformanceMonitor
 {
-    public function handle(Request $request, Closure $next)
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
+    public function handle(Request $request, Closure $next): Response
     {
-        // Only monitor API routes
-        if (!$this->isApiRoute($request)) {
-            return $next($request);
+        // For maximum performance, only monitor in debug mode
+        if (config('app.debug')) {
+            $start = microtime(true);
+            $response = $next($request);
+            $time = microtime(true) - $start;
+
+            // Log only slow requests (>100ms) to reduce overhead
+            if ($time > 0.1) {
+                Log::info('Slow API Request', [
+                    'url' => $request->url(),
+                    'time' => $time,
+                    'method' => $request->method()
+                ]);
+            }
+
+            // Add performance headers only in debug mode
+            $response->headers->set('X-Response-Time', $time * 1000);
+            return $response;
         }
 
-        // Record start time
-        $startTime = microtime(true);
-
-        // Process the request
-        $response = $next($request);
-
-        // Calculate execution time
-        $executionTime = (microtime(true) - $startTime) * 1000; // Convert to milliseconds
-
-        // Log slow requests (over 100ms)
-        if ($executionTime > 100) {
-            Log::warning('Slow API Request', [
-                'url' => $request->fullUrl(),
-                'method' => $request->method(),
-                'execution_time_ms' => round($executionTime, 2),
-                'status_code' => $response->getStatusCode(),
-                'user_agent' => $request->userAgent(),
-            ]);
-        }
-
-        // Add performance header for debugging
-        $response->headers->set('X-Response-Time', round($executionTime, 2) . 'ms');
-
-        return $response;
-    }
-
-    private function isApiRoute(Request $request): bool
-    {
-        return str_starts_with($request->path(), 'api/');
+        // In production, skip monitoring for maximum speed
+        return $next($request);
     }
 }

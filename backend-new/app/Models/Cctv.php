@@ -44,4 +44,22 @@ class Cctv extends Model
     {
         return $this->belongsTo(Room::class);
     }
+
+    // Clear cache when CCTV is created, updated, or deleted
+    public static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($cctv) {
+            \App\Models\Building::clearAllCaches();
+        });
+
+        static::updated(function ($cctv) {
+            \App\Models\Building::clearAllCaches();
+        });
+
+        static::deleted(function ($cctv) {
+            \App\Models\Building::clearAllCaches();
+        });
+    }
 }

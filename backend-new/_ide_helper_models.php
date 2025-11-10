@@ -18,6 +18,11 @@ namespace App\Models;
  *
  * @method int getKey()
  * @method string getKeyName()
+ * @method bool hasRole(string|array|\Spatie\Permission\Contracts\Role|\Illuminate\Support\Collection $roles, string $guard = null)
+ * @method bool hasAnyRole(string|array|\Spatie\Permission\Contracts\Role|\Illuminate\Support\Collection $roles, string $guard = null)
+ * @method bool hasAllRoles(string|array|\Spatie\Permission\Contracts\Role|\Illuminate\Support\Collection $roles, string $guard = null)
+ * @method bool can(string $permission)
+ * @method array roles()
  */
 class User extends \Illuminate\Foundation\Auth\User
 {

@@ -14,13 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Register CORS middleware for all routes
-        $middleware->append([
-            Cors::class,
-        ]);
+        // CORS middleware is applied in API routes, not globally
 
-        // ProxyToFrontend middleware is now applied selectively in routes
-        // to avoid conflicts with Filament admin panel
+
     })
     ->withProviders([
         AdminPanelProvider::class,

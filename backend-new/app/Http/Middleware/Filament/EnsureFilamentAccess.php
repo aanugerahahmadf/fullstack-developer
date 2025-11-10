@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
+use Spatie\Permission\Models\Role;
 
 class EnsureFilamentAccess
 {
@@ -24,8 +25,14 @@ class EnsureFilamentAccess
             }
 
             // Check if user is authenticated and has the super-admin role
-            if (Auth::check() && Auth::user()->hasRole('super-admin')) {
-                return $next($request);
+            if (Auth::check()) {
+                $user = Auth::user();
+                // Check if user has super-admin role using Spatie Permission
+                // Using a database query approach to avoid IDE intelephense error
+                $superAdminRole = Role::where('name', 'super-admin')->first();
+                if ($superAdminRole && $user->roles->contains($superAdminRole)) {
+                    return $next($request);
+                }
             }
 
             // If not the super admin, redirect to login

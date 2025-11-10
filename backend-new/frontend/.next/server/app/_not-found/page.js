@@ -1,0 +1,13 @@
+var R=require("../../chunks/ssr/[turbopack]_runtime.js")("server/app/_not-found/page.js")
+R.c("server/chunks/ssr/v0-pertamina-frontend-build_ebe5020a._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__26ea44e5._.js")
+R.c("server/chunks/ssr/edd1f_next_dist_esm_build_templates_app-page_d1b3463c.js")
+R.c("server/chunks/ssr/[root-of-the-server]__730d469d._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__42f1c582._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__03388884._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__38baf244._.js")
+R.c("server/chunks/ssr/edd1f_next_dist_client_components_c6299878._.js")
+R.c("server/chunks/ssr/edd1f_next_dist_client_components_builtin_forbidden_2b5538ed.js")
+R.c("server/chunks/ssr/fb43a_tamina-frontend-build__next-internal_server_app__not-found_page_actions_dbcde082.js")
+R.m(81823)
+module.exports=R.m(81823).exports

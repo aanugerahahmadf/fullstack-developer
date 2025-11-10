@@ -1,62 +1,83 @@
-import axios, { AxiosError } from 'axios';
+// API configuration for the frontend to communicate directly with the backend
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
-// Define TypeScript interfaces for our data models
+// Define response wrapper interface
 interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
 }
 
+// Helper function to make API requests with improved error handling
+export async function api<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  const config: RequestInit = {
+    credentials: 'include', // Include credentials for CORS requests
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    // Set timeout to 10 seconds as per project requirements
+    signal: AbortSignal.timeout(10000),
+    ...options,
+  };
+
+  try {
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+    
+    const result: ApiResponse<T> = await response.json();
+    return result.data;
+  } catch (error) {
+    console.error('API request error:', error);
+    // Provide more detailed error information
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        throw new Error('API request timeout: The request took too long to complete');
+      }
+      // Re-throw the error to be handled by the calling function
+      throw error;
+    }
+    throw new Error('Unknown API request error');
+  }
+}
+
+
+
+// Define TypeScript interfaces for API responses
+interface Stats {
+  total_buildings: number;
+  total_rooms: number;
+  total_cctvs: number;
+}
+
 interface Building {
   id: string;
   name: string;
-  latitude: string;
-  longitude: string;
-  marker_icon_url?: string;
-  rooms?: Room[];
-  created_at: string;
-  updated_at: string;
+  latitude?: string;
+  longitude?: string;
+  // Add other building properties as needed
 }
 
 interface Room {
   id: string;
   name: string;
   building_id: string;
-  latitude?: string;
-  longitude?: string;
-  marker_icon_url?: string;
-  cctvs?: Cctv[];
-  created_at: string;
-  updated_at: string;
+  // Add other room properties as needed
 }
 
 interface Cctv {
   id: string;
   name: string;
-  ip_rtsp_url?: string;
-  room_id: string;
-  location?: string;
-  status?: string;
   ip_address: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Contact {
-  id: string;
-  email?: string;
-  phone?: string;
-  whatsapp?: string;
-  instagram?: string;
-  address?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Stats {
-  total_buildings: number;
-  total_rooms: number;
-  total_cctvs: number;
+  rtsp_url: string;
+  room_id: string;
+  username?: string;
+  // Add other CCTV properties as needed
 }
 
 interface ProductionTrend {
@@ -71,226 +92,152 @@ interface UnitPerformance {
   capacity: number;
 }
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+interface StreamData {
+  stream_url: string;
+  // Add other stream properties as needed
+}
 
-// Create axios instance with optimized config for faster response
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept-Encoding': 'gzip, deflate, br'
-  },
-  timeout: 3000, // Reduced timeout to 3 seconds for faster response
-  // Disable request retries for faster failure
-  transitional: {
-    clarifyTimeoutError: true,
-  },
-  // Handle compression properly
-  decompress: true,
-});
+interface Contact {
+  id: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  instagram?: string;
+}
 
-// Simple in-memory cache for API responses
-const apiCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
-
-// Axios response interceptor for error handling
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error: AxiosError) => {
-    console.error('API Error:', error.response?.data || error.message);
-    return Promise.reject(error);
-  }
-);
-
-// Add request interceptor for caching
-apiClient.interceptors.request.use(
-  (config) => {
-    // Create cache key
-    const cacheKey = `${config.method?.toUpperCase()}:${config.url}`;
-    
-    // Check if we have a cached response that's still valid
-    if (config.method === 'get' && apiCache.has(cacheKey)) {
-      const cached = apiCache.get(cacheKey)!;
-      if (Date.now() - cached.timestamp < CACHE_DURATION) {
-        // Return cached response
-        return Promise.reject({ cached: cached.data });
-      }
-    }
-    
-    return config;
-  },
-  (error) => {
-    console.error('API Request Error:', error);
-    return Promise.reject(error);
-  }
-);
-
-// Add response interceptor for caching
-apiClient.interceptors.response.use(
-  (response) => {
-    // Cache GET responses
-    if (response.config.method === 'get') {
-      const cacheKey = `${response.config.method?.toUpperCase()}:${response.config.url}`;
-      apiCache.set(cacheKey, {
-        data: response.data,
-        timestamp: Date.now()
-      });
-    }
+// Specific API methods with proper typing and error handling
+export const getStats = async (): Promise<Stats> => {
+  try {
+    const response = await api<Stats>('/stats');
     return response;
-  },
-  (error) => {
-    // Handle cached response
-    if (error.cached) {
-      return Promise.resolve({ data: error.cached });
-    }
-    return Promise.reject(error);
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    // Return default values to prevent app crash
+    return {
+      total_buildings: 0,
+      total_rooms: 0,
+      total_cctvs: 0
+    };
   }
-);
+};
 
-export const api = {
-  // Stats
-  getStats: async (): Promise<Stats> => {
-    try {
-      const response = await apiClient.get<ApiResponse<Stats>>('/stats');
-      return response.data.data;
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
-      throw error;
-    }
-  },
+export const getBuildings = async (): Promise<Building[]> => {
+  try {
+    const response = await api<Building[]>('/buildings');
+    return response;
+  } catch (error) {
+    console.error('Error fetching buildings:', error);
+    // Return empty array to prevent app crash
+    return [];
+  }
+};
 
-  // Chart Data
-  getProductionTrends: async (startDate?: string, endDate?: string): Promise<ProductionTrend[]> => {
-    try {
-      const params = new URLSearchParams();
-      if (startDate) params.append('start_date', startDate);
-      if (endDate) params.append('end_date', endDate);
-      
-      const url = `/chart/production-trends${params.toString() ? '?' + params.toString() : ''}`;
-      const response = await apiClient.get<ApiResponse<ProductionTrend[]>>(url);
-      return response.data.data;
-    } catch (error) {
-      console.error('Failed to fetch production trends:', error);
-      throw error;
-    }
-  },
+export const getBuilding = async (id: string): Promise<Building> => {
+  try {
+    const response = await api<Building>(`/buildings/${id}`);
+    return response;
+  } catch (error) {
+    console.error(`Error fetching building ${id}:`, error);
+    // Return empty object to prevent app crash
+    return {} as Building;
+  }
+};
 
-  getUnitPerformance: async (): Promise<UnitPerformance[]> => {
-    try {
-      const response = await apiClient.get<ApiResponse<UnitPerformance[]>>('/chart/unit-performance');
-      return response.data.data;
-    } catch (error) {
-      console.error('Failed to fetch unit performance:', error);
-      throw error;
-    }
-  },
+export const getRooms = async (): Promise<Room[]> => {
+  try {
+    const response = await api<Room[]>('/rooms');
+    return response;
+  } catch (error) {
+    console.error('Error fetching rooms:', error);
+    // Return empty array to prevent app crash
+    return [];
+  }
+};
 
-  // Buildings
-  getBuildings: async (): Promise<Building[]> => {
-    try {
-      const response = await apiClient.get<ApiResponse<Building[]>>('/buildings');
-      return response.data.data;
-    } catch (error) {
-      console.error('Failed to fetch buildings:', error);
-      throw error;
-    }
-  },
+export const getRoom = async (id: string): Promise<Room> => {
+  try {
+    const response = await api<Room>(`/rooms/${id}`);
+    return response;
+  } catch (error) {
+    console.error(`Error fetching room ${id}:`, error);
+    // Return empty object to prevent app crash
+    return {} as Room;
+  }
+};
 
-  getBuilding: async (id: string): Promise<Building> => {
-    try {
-      const response = await apiClient.get<ApiResponse<Building>>(`/buildings/${id}`);
-      return response.data.data;
-    } catch (error) {
-      console.error(`Failed to fetch building ${id}:`, error);
-      throw error;
-    }
-  },
+export const getRoomsByBuilding = async (buildingId: string): Promise<Room[]> => {
+  try {
+    const response = await api<Room[]>(`/rooms/building/${buildingId}`);
+    return response;
+  } catch (error) {
+    console.error(`Error fetching rooms for building ${buildingId}:`, error);
+    // Return empty array to prevent app crash
+    return [];
+  }
+};
 
-  // Rooms
-  getRooms: async (): Promise<Room[]> => {
-    try {
-      const response = await apiClient.get<ApiResponse<Room[]>>('/rooms');
-      return response.data.data;
-    } catch (error) {
-      console.error('Failed to fetch rooms:', error);
-      throw error;
-    }
-  },
+export const getCctvs = async (): Promise<Cctv[]> => {
+  try {
+    const response = await api<Cctv[]>('/cctvs');
+    return response;
+  } catch (error) {
+    console.error('Error fetching CCTVs:', error);
+    // Return empty array to prevent app crash
+    return [];
+  }
+};
 
-  getRoomsByBuilding: async (buildingId: string): Promise<Room[]> => {
-    try {
-      const response = await apiClient.get<ApiResponse<Room[]>>(`/rooms/building/${buildingId}`);
-      return response.data.data;
-    } catch (error) {
-      console.error(`Failed to fetch rooms for building ${buildingId}:`, error);
-      throw error;
-    }
-  },
+export const getCctvsByRoom = async (roomId: string): Promise<Cctv[]> => {
+  try {
+    const response = await api<Cctv[]>(`/cctvs/room/${roomId}`);
+    return response;
+  } catch (error) {
+    console.error(`Error fetching CCTVs for room ${roomId}:`, error);
+    // Return empty array to prevent app crash
+    return [];
+  }
+};
 
-  getRoom: async (id: string): Promise<Room> => {
-    try {
-      const response = await apiClient.get<ApiResponse<Room>>(`/rooms/${id}`);
-      return response.data.data;
-    } catch (error) {
-      console.error(`Failed to fetch room ${id}:`, error);
-      throw error;
-    }
-  },
+export const getCctvStreamUrl = async (cctvId: string): Promise<StreamData> => {
+  try {
+    const response = await api<StreamData>(`/cctvs/stream/${cctvId}`);
+    return response;
+  } catch (error) {
+    console.error(`Error fetching stream URL for CCTV ${cctvId}:`, error);
+    // Return empty object to prevent app crash
+    return { stream_url: '' };
+  }
+};
 
-  // CCTVs
-  getCctvs: async (): Promise<Cctv[]> => {
-    try {
-      const response = await apiClient.get<ApiResponse<Cctv[]>>('/cctvs');
-      return response.data.data;
-    } catch (error) {
-      console.error('Failed to fetch CCTVs:', error);
-      throw error;
-    }
-  },
+export const getProductionTrends = async (startDate: string, endDate: string): Promise<ProductionTrend[]> => {
+  try {
+    const response = await api<ProductionTrend[]>(`/chart/production-trends?start_date=${startDate}&end_date=${endDate}`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching production trends:', error);
+    // Return empty array to prevent app crash
+    return [];
+  }
+};
 
-  getCctvsByRoom: async (roomId: string): Promise<Cctv[]> => {
-    try {
-      const response = await apiClient.get<ApiResponse<Cctv[]>>(`/cctvs/room/${roomId}`);
-      return response.data.data;
-    } catch (error) {
-      console.error(`Failed to fetch CCTVs for room ${roomId}:`, error);
-      throw error;
-    }
-  },
+export const getUnitPerformance = async (): Promise<UnitPerformance[]> => {
+  try {
+    const response = await api<UnitPerformance[]>('/chart/unit-performance');
+    return response;
+  } catch (error) {
+    console.error('Error fetching unit performance:', error);
+    // Return empty array to prevent app crash
+    return [];
+  }
+};
 
-  getCctv: async (id: string): Promise<Cctv> => {
-    try {
-      const response = await apiClient.get<ApiResponse<Cctv>>(`/cctvs/${id}`);
-      return response.data.data;
-    } catch (error) {
-      console.error(`Failed to fetch CCTV ${id}:`, error);
-      throw error;
-    }
-  },
-
-  getCctvStreamUrl: async (id: string): Promise<{ stream_url: string }> => {
-    try {
-      const response = await apiClient.get<ApiResponse<{ stream_url: string }>>(`/cctvs/${id}/stream-url`);
-      return response.data.data;
-    } catch (error) {
-      console.error(`Failed to fetch stream URL for CCTV ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Contacts
-  getContacts: async (): Promise<Contact[] | Contact | null> => {
-    try {
-      const response = await apiClient.get<ApiResponse<Contact[] | Contact | null>>('/contacts');
-      return response.data.data;
-    } catch (error) {
-      console.error('Failed to fetch contacts:', error);
-      throw error;
-    }
-  },
-
-  // Cache management
-  clearCache: (): void => {
-    apiCache.clear();
+export const getContacts = async (): Promise<Contact[]> => {
+  try {
+    const response = await api<Contact[]>('/contact');
+    return response;
+  } catch (error) {
+    console.error('Error fetching contacts:', error);
+    // Return empty array to prevent app crash
+    return [];
   }
 };

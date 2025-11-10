@@ -9,10 +9,7 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: {
-    default: "Kilang Pertamina International - Refinery Unit VI Balongan",
-    template: "%s - Kilang Pertamina International - Refinery Unit VI Balongan"
-  },
+  title: "Kilang Pertamina International",
   description: "Refinery monitoring and management system",
   generator: 'v0.app'
 }
@@ -25,12 +22,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
       </head>
       <body className={`${_geist.className} antialiased flex flex-col min-h-screen`}>
         <Navbar />
-        <main className="flex-grow">{children}</main>
+        <main className="flex-grow w-full">
+          {children}
+        </main>
         <Footer />
       </body>
     </html>

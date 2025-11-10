@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-11-10T07:23:00.544Z",
+  "version": "1.0.0",
+  "buildPath": "D:\\fullstack-developer\\deploy",
+  "components": {
+    "frontend": {
+      "path": "D:\\fullstack-developer\\v0-pertamina-frontend-build\\.next",
+      "type": "Next.js"
+    },
+    "backend": {
+      "path": "D:\\fullstack-developer\\backend-new",
+      "type": "Laravel"
+    }
+  }
+}

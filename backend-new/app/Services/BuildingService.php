@@ -18,8 +18,8 @@ class BuildingService extends BaseService
 
     public function getBuildingsWithRoomsAndCctvs(): Collection
     {
-        // Cache the result for 5 seconds to reduce database load and improve response time
-        return Cache::remember('buildings_with_rooms_and_cctvs', 5, function () {
+        // Reduce cache time to 1 second for near real-time updates
+        return Cache::remember('buildings_with_rooms_and_cctvs', 1, function () {
             return $this->buildingRepository->withRoomsAndCctvs();
         });
     }
