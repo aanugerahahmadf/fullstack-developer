@@ -5,12 +5,14 @@ import dynamic from "next/dynamic"
 import { 
   getBuildings, 
   getRoomsByBuilding, 
-  getCctvStreamUrl 
+  getCctvStreamUrl, 
+  getCctvsByRoom
 } from '@/lib/api'
 import { handleApiError } from '@/lib/enhanced-utils'
 
 // Dynamically import lucide-react icons to avoid HMR issues with Turbopack
 const X = dynamic(() => import('lucide-react').then((mod) => mod.X), { ssr: false })
+const Video = dynamic(() => import('lucide-react').then((mod) => mod.Video), { ssr: false })
 
 // Dynamically import leaflet components for better performance
 const MapContainer = dynamic(
@@ -57,6 +59,7 @@ export default function MapsPage() {
   
   const mapRef = useRef<any>(null)
   const leafletRef = useRef<any>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
   
   // Load leaflet dynamically only on client side
   useEffect(() => {
@@ -84,6 +87,42 @@ export default function MapsPage() {
     loadLeaflet()
   }, [])
   
+  // Initialize HLS playback for stream URLs
+  useEffect(() => {
+    if (!showLiveStream || !streamData?.stream_url) return
+    const url = streamData.stream_url as string
+    const video = videoRef.current
+    if (!video) return
+
+    // If native HLS is supported (Safari)
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = url
+      video.play().catch(() => { /* no-op */ })
+      return
+    }
+
+    // Use HLS.js for other browsers
+    let hls: any
+    ;(async () => {
+      const mod = await import('hls.js')
+      const Hls = mod.default
+      if (Hls.isSupported()) {
+        hls = new Hls({ maxBufferLength: 10 })
+        hls.loadSource(url)
+        hls.attachMedia(video)
+      } else {
+        // Fallback: try direct src (may fail)
+        video.src = url
+      }
+    })()
+
+    return () => {
+      if (hls) {
+        try { hls.destroy() } catch { /* ignore */ }
+      }
+    }
+  }, [showLiveStream, streamData])
+
   // Fetch buildings data
   useEffect(() => {
     if (!mounted) return
@@ -119,16 +158,23 @@ export default function MapsPage() {
     try {
       // Fetch rooms for this building
       const buildingRooms = await getRoomsByBuilding(building.id)
-      
-      // Add CCTVs to each room
-      const buildingRoomsWithCctvs = buildingRooms.map((room: any) => {
-        // Filter CCTVs for this room
-        const roomCctvs = cctvs.filter((cctv: any) => cctv.room_id === room.id);
-        return {
-          ...room,
-          cctvs: roomCctvs
-        };
-      });
+ 
+      // Fetch CCTVs per room from backend so names/data match Filament
+      const buildingRoomsWithCctvs = await Promise.all(
+        buildingRooms.map(async (room: any) => {
+          try {
+            const roomCctvs = await getCctvsByRoom(String(room.id))
+            return {
+              ...room,
+              cctvs: Array.isArray(roomCctvs) ? roomCctvs : []
+            }
+          } catch {
+            return { ...room, cctvs: [] }
+          }
+        })
+      )
+      // Optional: keep flat cache
+      setCctvs(buildingRoomsWithCctvs.flatMap((r: any) => r.cctvs || []))
       
       // Add rooms to the building object
       const buildingWithRooms = { 
@@ -223,7 +269,8 @@ export default function MapsPage() {
   
   if (!mounted) {
     return (
-      <main className="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-950 py-8 min-h-[calc(100vh-140px)] flex flex-col">
+      // Fixed background gradient to ensure full width and proper height
+      <main className="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-900 py-8 min-h-screen w-full flex flex-col">
         <div className="pt-4 pb-6 px-4">
           <div className="flex justify-center items-center gap-4">
             <h1 className="text-3xl md:text-4xl font-semibold text-white text-center">Maps</h1>
@@ -244,7 +291,8 @@ export default function MapsPage() {
   }
   
   return (
-    <main className="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-950 py-8 min-h-[calc(100vh-140px)] flex flex-col">
+    // Fixed background gradient to ensure full width and proper height
+    <main className="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-900 py-8 min-h-screen w-full flex flex-col">
       {/* Header */}
       <div className="pt-4 pb-6 px-4">
         <div className="flex justify-center items-center gap-4">
@@ -326,14 +374,14 @@ export default function MapsPage() {
             {/* Video Player - responsive aspect ratio */}
             <div className="aspect-video bg-black/50 flex items-center justify-center flex-grow relative live-stream-video-container">
               {streamData && streamData.stream_url ? (
-                <video 
-                  src={streamData.stream_url} 
-                  autoPlay 
-                  controls 
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  controls
                   className="w-full h-full object-contain"
-                  onError={(e) => {
-                    console.error('Video playback error:', e);
-                    // Handle playback errors gracefully
+                  onError={() => {
+                    // Hindari logging objek event untuk mencegah warning Next.js (sync dynamic APIs)
+                    console.warn('Video playback error')
                   }}
                 >
                   Your browser does not support the video tag.
@@ -426,23 +474,9 @@ export default function MapsPage() {
                               </button>
                             ))
                           ) : (
-                            <button
-                              onClick={() => {
-                                const dummyCctv = {
-                                  id: `room-${room.id}-default`,
-                                  name: `${room.name || 'Room'} Camera`,
-                                  room: room
-                                }
-                                handleLiveStream(dummyCctv)
-                                setShowRoomsModal(false)
-                              }}
-                              className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm font-semibold py-2 px-3 rounded-lg flex items-center justify-center gap-2 shadow-md transition-all duration-200 transform hover:scale-[1.02]"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
-                              </svg>
-                              <span>View Camera</span>
-                            </button>
+                            <div className="w-full text-center text-white/80 text-sm py-2">
+                              No CCTV found in this room
+                            </div>
                           )}
                         </div>
                       </div>
@@ -467,5 +501,3 @@ export default function MapsPage() {
     </main>
   )
 }
-
-

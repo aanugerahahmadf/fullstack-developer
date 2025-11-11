@@ -32,15 +32,15 @@ function startProcess(command, args, cwd, name) {
   return process;
 }
 
-// Start Laravel backend (PHP server) on port 8001
+// Start Laravel backend (PHP server) on port 8000
 const laravelProcess = startProcess(
   'php', 
-  ['artisan', 'serve', '--port=8001'], 
+  ['artisan', 'serve', '--port=8000'], 
   path.join(__dirname, 'backend-new'), 
   'Laravel Backend'
 );
 
-// Start Next.js frontend (Next.js dev server) on port 3001
+// Start Next.js frontend (Next.js dev server) on port 3000
 const nextProcess = startProcess(
   'npm', 
   ['run', 'dev'], 
@@ -48,32 +48,38 @@ const nextProcess = startProcess(
   'Next.js Frontend'
 );
 
-// Start Express proxy server on port 8000
-const proxyProcess = startProcess(
-  'npm', 
-  ['run', 'start'], 
-  path.join(__dirname, 'backend-new'), 
-  'Express Proxy'
+// Start Streaming server on port 8000 (RTMP on 1935, HTTP on 8000, API on 3000)
+const streamingProcess = startProcess(
+  'node', 
+  ['server.js'], 
+  path.join(__dirname, 'streaming-server'), 
+  'Streaming Server'
 );
 
 // Graceful shutdown
 process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down servers...');
-  laravelProcess.kill();
-  nextProcess.kill();
-  proxyProcess.kill();
+  if (laravelProcess && !laravelProcess.killed) laravelProcess.kill();
+  if (nextProcess && !nextProcess.killed) nextProcess.kill();
+  if (streamingProcess && !streamingProcess.killed) streamingProcess.kill();
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
   console.log('\n🛑 Shutting down servers...');
-  laravelProcess.kill();
-  nextProcess.kill();
-  proxyProcess.kill();
+  if (laravelProcess && !laravelProcess.killed) laravelProcess.kill();
+  if (nextProcess && !nextProcess.killed) nextProcess.kill();
+  if (streamingProcess && !streamingProcess.killed) streamingProcess.kill();
   process.exit(0);
 });
 
-console.log('✅ Fullstack application startup initiated!');
-console.log('🌐 Access your application at: http://127.0.0.1:8000');
-console.log('🔄 Hot reload is enabled for development');
-console.log('⚠️  Press Ctrl+C to stop all servers\n');
+// Check if processes started successfully
+setTimeout(() => {
+  console.log('\n✅ Fullstack application startup initiated!');
+  console.log('🌐 Access your application at: http://127.0.0.1:8000');
+  console.log('📡 Streaming server RTMP available on port 1935');
+  console.log('📡 Streaming server HTTP available on port 8000');
+  console.log('📡 Streaming server API available on port 3000');
+  console.log('🔄 Hot reload is enabled for development');
+  console.log('⚠️  Press Ctrl+C to stop all servers\n');
+}, 3000);

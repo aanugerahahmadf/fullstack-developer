@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import dynamic from 'next/dynamic'
 import { getContacts } from '@/lib/api'
 
@@ -11,15 +11,10 @@ const MapPin = dynamic(() => import('lucide-react').then((mod) => mod.MapPin), {
 const Instagram = dynamic(() => import('lucide-react').then((mod) => mod.Instagram), { ssr: false })
 const X = dynamic(() => import('lucide-react').then((mod) => mod.X), { ssr: false })
 const Building2 = dynamic(() => import('lucide-react').then((mod) => mod.Building2), { ssr: false })
-const CheckCircle = dynamic(() => import('lucide-react').then((mod) => mod.CheckCircle), { ssr: false })
-const AlertTriangle = dynamic(() => import('lucide-react').then((mod) => mod.AlertTriangle), { ssr: false })
-const XCircle = dynamic(() => import('lucide-react').then((mod) => mod.XCircle), { ssr: false })
 
 export default function ContactPage() {
   const [contacts, setContacts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [apiStatus, setApiStatus] = useState('connected')
-  const [systemStatus, setSystemStatus] = useState({status: 'active', message: 'All systems operational'})
   
   // State for dynamically imported icons
   const [icons, setIcons] = useState({
@@ -29,16 +24,13 @@ export default function ContactPage() {
     Instagram: null as any,
     X: null as any,
     Building2: null as any,
-    CheckCircle: null as any,
-    AlertTriangle: null as any,
-    XCircle: null as any,
   });
 
   // Load icons dynamically
   useEffect(() => {
     const loadIcons = async () => {
-      const { Phone, Mail, MapPin, Instagram, X, Building2, CheckCircle, AlertTriangle, XCircle } = await import('lucide-react');
-      setIcons({ Phone, Mail, MapPin, Instagram, X, Building2, CheckCircle, AlertTriangle, XCircle });
+      const { Phone, Mail, MapPin, Instagram, X, Building2 } = await import('lucide-react');
+      setIcons({ Phone, Mail, MapPin, Instagram, X, Building2 });
     };
     
     loadIcons();
@@ -65,46 +57,47 @@ export default function ContactPage() {
     return () => clearTimeout(timer);
   }, []) // Empty dependency array - only run once on mount
 
-  // Function to get the appropriate icon and color for system status
-  const getSystemStatusDisplay = () => {
-    switch (systemStatus.status) {
-      case 'active':
-        return { icon: icons.CheckCircle, color: 'text-emerald-400', bgColor: 'bg-emerald-500/20' };
-      case 'warning':
-        return { icon: icons.AlertTriangle, color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' };
-      case 'error':
-        return { icon: icons.XCircle, color: 'text-red-400', bgColor: 'bg-red-500/20' };
-      default:
-        return { icon: icons.Building2, color: 'text-blue-400', bgColor: 'bg-blue-500/20' };
-    }
+  // Function to handle email click - opens Gmail specifically
+  const handleEmailClick = (email: string) => {
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}`, '_blank');
   };
 
-  const systemStatusDisplay = getSystemStatusDisplay();
-  const SystemStatusIcon = systemStatusDisplay.icon;
+  // Function to handle phone click - opens phone contacts app or dialer
+  const handlePhoneClick = (phone: string) => {
+    // Remove any non-digit characters except + for international numbers
+    const cleanPhone = phone.replace(/[^\d+]/g, '');
+    
+    // Try multiple approaches for better compatibility
+    const urls = [
+      `tel:${cleanPhone}`,           // Standard phone dialer (most widely supported)
+      `sms:${cleanPhone}`,           // SMS as fallback
+    ];
+    
+    // Try to open the phone dialer first (most reliable)
+    window.open(urls[0], '_blank');
+  };
+
+  // Function to handle Instagram click - opens Instagram profile
+  const handleInstagramClick = (instagram: string) => {
+    // Assuming instagram handle doesn't include @, add it if needed
+    const instagramHandle = instagram.startsWith('@') ? instagram.substring(1) : instagram;
+    window.open(`https://www.instagram.com/${instagramHandle}`, '_blank');
+  };
+
+  // Function to handle address click - opens Google Maps
+  const handleAddressClick = (address: string) => {
+    // Encode the address for URL
+    const encodedAddress = encodeURIComponent(address);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
+  };
 
   return (
-    <main className="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-900 py-8 min-h-[calc(100vh-140px)]">
+    // Fixed background gradient to ensure full width and proper height
+    <main className="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-900 py-8 min-h-screen w-full">
       {/* Header */}
       <div className="pt-4 pb-6 px-4">
         <div className="flex justify-center items-center gap-4">
-          <h1 className="text-3xl md:text-4xl font-semibold text-white text-center">Contact</h1>
-        </div>
-      </div>
-
-      {/* System Status Card - responsive design */}
-      <div className="max-w-7xl mx-auto px-4 pb-6">
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 md:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-semibold text-sm mb-1">System Status</p>
-              <p className={`text-lg font-semibold ${systemStatusDisplay.color}`}>
-                {loading ? 'Loading...' : systemStatus.message}
-              </p>
-            </div>
-            <div className={`p-2 rounded-full ${systemStatusDisplay.bgColor}`}>
-              {SystemStatusIcon && <SystemStatusIcon className={`w-6 h-6 ${systemStatusDisplay.color}`} />}
-            </div>
-          </div>
+          <h1 className="text-4xl md:text-5xl font-semibold text-white text-center">Contact</h1>
         </div>
       </div>
 
@@ -121,55 +114,76 @@ export default function ContactPage() {
             <p className="text-white font-semibold">No contact information available</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-4">
             {contacts.map((contact) => (
-              <div key={contact.id} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 md:p-6">
-                <div className="space-y-4">
-                  {/* Email */}
-                  {contact.email && (
-                    <div className="flex items-center gap-3">
-                      {icons.Mail && <icons.Mail className="w-5 h-5 text-blue-400" />}
+              <React.Fragment key={contact.id}>
+                {/* Email Card */}
+                {contact.email && (
+                  <div 
+                    className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[120px] md:min-h-[140px] cursor-pointer hover:bg-white/20 transition-all duration-200 flex items-center justify-center shadow-lg"
+                    onClick={() => handleEmailClick(contact.email)}
+                  >
+                    <div className="flex flex-col items-center justify-center text-center">
+                      {icons.Mail && <icons.Mail className="w-6 h-6 text-blue-400 mb-3" />}
                       <div>
-                        <p className="text-white text-sm font-semibold">Email</p>
-                        <p className="text-white text-sm">{contact.email}</p>
+                        <p className="text-white text-base md:text-lg font-bold mb-1">Email</p>
+                        <p className="text-white text-base">{contact.email}</p>
                       </div>
                     </div>
-                  )}
-                  
-                  {/* Phone */}
-                  {contact.phone && (
-                    <div className="flex items-center gap-3">
-                      {icons.Phone && <icons.Phone className="w-5 h-5 text-green-400" />}
+                  </div>
+                )}
+                
+                {/* Phone Card */}
+                {contact.phone && (
+                  <div 
+                    className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[120px] md:min-h-[140px] cursor-pointer hover:bg-white/20 transition-all duration-200 flex items-center justify-center shadow-lg"
+                    onClick={() => handlePhoneClick(contact.phone)}
+                  >
+                    <div className="flex flex-col items-center justify-center text-center">
+                      {icons.Phone && <icons.Phone className="w-6 h-6 text-green-400 mb-3" />}
                       <div>
-                        <p className="text-white text-sm font-semibold">Phone</p>
-                        <p className="text-white text-sm">{contact.phone}</p>
+                        <p className="text-white text-base md:text-lg font-bold mb-1">Phone</p>
+                        <p className="text-white text-base">{contact.phone}</p>
                       </div>
                     </div>
-                  )}
-                  
-                  {/* Address */}
-                  {contact.address && (
-                    <div className="flex items-start gap-3">
-                      {icons.MapPin && <icons.MapPin className="w-5 h-5 text-red-400 mt-0.5" />}
+                  </div>
+                )}
+                
+                {/* Instagram Card */}
+                {contact.instagram && (
+                  <div 
+                    className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[120px] md:min-h-[140px] cursor-pointer hover:bg-white/20 transition-all duration-200 flex items-center justify-center shadow-lg"
+                    onClick={() => handleInstagramClick(contact.instagram)}
+                  >
+                    <div className="flex flex-col items-center justify-center text-center">
+                      {icons.Instagram && <icons.Instagram className="w-6 h-6 text-pink-400 mb-3" />}
                       <div>
-                        <p className="text-white text-sm font-semibold">Address</p>
-                        <p className="text-white text-sm">{contact.address}</p>
+                        <p className="text-white text-base md:text-lg font-bold mb-1">Instagram</p>
+                        <p className="text-white text-base">{contact.instagram}</p>
                       </div>
                     </div>
-                  )}
-                  
-                  {/* Instagram */}
-                  {contact.instagram && (
-                    <div className="flex items-center gap-3">
-                      {icons.Instagram && <icons.Instagram className="w-5 h-5 text-pink-400" />}
-                      <div>
-                        <p className="text-white text-sm font-semibold">Instagram</p>
-                        <p className="text-white text-sm">{contact.instagram}</p>
-                      </div>
+                  </div>
+                )}
+              </React.Fragment>
+            ))}
+            
+            {/* Address Card - Moved to the bottom and full width */}
+            {contacts.map((contact) => (
+              contact.address && (
+                <div 
+                  key={`address-${contact.id}`} 
+                  className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[120px] md:min-h-[140px] col-span-1 md:col-span-2 lg:col-span-3 cursor-pointer hover:bg-white/20 transition-all duration-200 flex items-center justify-center shadow-lg"
+                  onClick={() => handleAddressClick(contact.address)}
+                >
+                  <div className="flex flex-col items-center justify-center text-center">
+                    {icons.MapPin && <icons.MapPin className="w-6 h-6 text-red-400 mb-3" />}
+                    <div>
+                      <p className="text-white text-base md:text-lg font-bold mb-1">Address</p>
+                      <p className="text-white text-base">{contact.address}</p>
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )
             ))}
           </div>
         )}

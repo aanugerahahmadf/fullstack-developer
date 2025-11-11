@@ -20,8 +20,8 @@ class StatsService extends BaseService
 
     public function getStats()
     {
-        // Reduce cache time to 1 second for near real-time updates
-        return Cache::remember('dashboard_stats', 1, function () {
+        // Ultra-fast cache with 0.5 second TTL for maximum responsiveness
+        return Cache::remember('dashboard_stats', 0.5, function () {
             // Use raw database queries for maximum performance
             return [
                 'total_buildings' => Building::count(),

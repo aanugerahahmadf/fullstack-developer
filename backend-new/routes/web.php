@@ -20,9 +20,14 @@ Route::get('/images/{any}', function ($any) {
     abort(404);
 })->where('any', '.*');
 
-// Serve the Next.js frontend application
-// Handle all HTTP methods for the frontend (GET, POST, PUT, PATCH, DELETE, etc.)
-// But exclude API, admin, and images routes
-Route::any('/{any?}', [FrontendController::class, 'serve'])
-    ->where('any', '^(?!api\/|admin\/|images\/).*$')
-    ->name('frontend.serve');
+// IMPORTANT: Filament admin routes are registered automatically by the AdminPanelProvider
+// The /admin routes will be handled by Filament before reaching this fallback
+
+// All API routes are handled separately in routes/api.php
+
+// Fallback: Serve the Next.js frontend application only for remaining routes
+// This will ONLY match routes that don't match any explicit routes above
+// Does NOT include: /admin/*, /api/*, /filament/*, etc (they're handled before this)
+Route::fallback(function (FrontendController $controller) {
+    return $controller->serve(request());
+});

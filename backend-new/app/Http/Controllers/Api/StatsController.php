@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class StatsController extends Controller
 {
@@ -16,12 +17,14 @@ class StatsController extends Controller
     public function index()
     {
         try {
-            // Optimized query for fast response
-            $stats = [
-                'total_buildings' => DB::table('buildings')->count(),
-                'total_rooms' => DB::table('rooms')->count(),
-                'total_cctvs' => DB::table('cctvs')->count(),
-            ];
+            // Ultra-fast cached statistics with 0.5 second TTL
+            $stats = Cache::remember('system_stats', 0.5, function () {
+                return [
+                    'total_buildings' => DB::table('buildings')->count(),
+                    'total_rooms' => DB::table('rooms')->count(),
+                    'total_cctvs' => DB::table('cctvs')->count(),
+                ];
+            });
 
             return response()->json([
                 'success' => true,

@@ -17,16 +17,16 @@ class CctvService extends BaseService
 
     public function getCctvsByRoomId(int $roomId)
     {
-        // Cache the result for 30 seconds to reduce database load and improve response time
-        return Cache::remember("cctvs_by_room_{$roomId}", 30, function () use ($roomId) {
+        // Ultra-fast cache with 0.5 second TTL for maximum responsiveness
+        return Cache::remember("cctvs_by_room_{$roomId}", 0.5, function () use ($roomId) {
             return $this->cctvRepository->getByRoomId($roomId);
         });
     }
 
     public function getStreamUrl(int $id)
     {
-        // Cache the result for 30 seconds to reduce database load and improve response time
-        return Cache::remember("cctv_stream_url_{$id}", 30, function () use ($id) {
+        // Ultra-fast cache with 0.5 second TTL for maximum responsiveness
+        return Cache::remember("cctv_stream_url_{$id}", 0.5, function () use ($id) {
             return $this->cctvRepository->getStreamUrl($id);
         });
     }

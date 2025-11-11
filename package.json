@@ -4,10 +4,10 @@
   "description": "Fullstack Pertamina Application with Laravel Backend and Next.js Frontend",
   "main": "start-app.js",
   "scripts": {
-    "start": "node complete-integration.js",
+    "start": "node start-fullstack.js",
     "dev": "node start-fullstack.js",
-    "complete": "node complete-integration.js",
-    "structured": "node structured-startup.js",
+    "complete": "node start-fullstack.js",
+    "structured": "node start-fullstack.js",
     "build": "node build-and-deploy.js",
     "test": "node --experimental-fetch test-api-connection.js",
     "test:integration": "node test-integration.js",

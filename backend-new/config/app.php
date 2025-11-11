@@ -135,7 +135,7 @@ return [
     'profile' => env('APP_PROFILE', false),
 
     // Disable unnecessary features for maximum speed
-    'log_level' => env('APP_LOG_LEVEL', 'error'),
+    'log_level' => env('APP_LOG_LEVEL', 'critical'),
 
     // Performance optimizations
     'aliases' => [

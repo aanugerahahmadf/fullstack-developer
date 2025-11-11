@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import dynamic from 'next/dynamic'
 import Link from "next/link"
-import { useParams } from "next/navigation" // Changed to useParams for App Router
+import { useParams } from "next/navigation"
 import { getRoom, getCctvsByRoom, getCctvStreamUrl } from '@/lib/api'
 
 // Dynamically import lucide-react icons to avoid HMR issues with Turbopack
@@ -16,8 +16,8 @@ const ExternalLink = dynamic(() => import('lucide-react').then((mod) => mod.Exte
 // Add metadata for the page
 
 export default function RoomCctvsPage() {
-  const params = useParams(); // Using useParams instead of useRouter for App Router
-  const { buildingId, roomId } = params;
+  const params = useParams();
+  const { buildingId, roomId } = params as { buildingId?: string; roomId?: string };
   const [room, setRoom] = useState<any>(null);
   const [cctvs, setCctvs] = useState<any[]>([]);
   const [selectedCctv, setSelectedCctv] = useState<any>(null);
@@ -28,6 +28,7 @@ export default function RoomCctvsPage() {
   const [systemStatus, setSystemStatus] = useState({status: 'active', message: 'All systems operational'});
   const [searchTerm, setSearchTerm] = useState("");
   const videoPlayerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   
   // State for dynamically imported icons
   const [icons, setIcons] = useState({
@@ -56,13 +57,13 @@ export default function RoomCctvsPage() {
     const fetchRoomAndCctvs = async () => {
       try {
         // Fetch room details
-        if (typeof roomId === 'string') {
+        if (roomId && typeof roomId === 'string') {
           const roomData = await getRoom(roomId)
           setRoom(roomData)
         }
         
         // Fetch CCTVs for this room
-        if (typeof roomId === 'string') {
+        if (roomId && typeof roomId === 'string') {
           const cctvsData = await getCctvsByRoom(roomId)
           setCctvs(cctvsData)
         }
@@ -73,13 +74,17 @@ export default function RoomCctvsPage() {
       }
     }
 
-    if (roomId) {
+    // Only fetch if we have a valid roomId
+    if (roomId && typeof roomId === 'string') {
       // Use a small delay to ensure UI is ready before fetching data
       const timer = setTimeout(() => {
         fetchRoomAndCctvs()
       }, 50);
       
       return () => clearTimeout(timer);
+    } else {
+      // If no roomId, stop loading
+      setLoading(false)
     }
   }, [roomId]) // Only re-fetch when roomId changes (which shouldn't happen)
 
@@ -91,13 +96,22 @@ export default function RoomCctvsPage() {
     try {
       setSelectedCctv(cctv)
       setShowLiveStream(true)
+      setStreamData(null) // Reset stream data before fetching new one
+      
       // Fetch stream URL
       const streamData = await getCctvStreamUrl(cctv.id)
-      console.log('Stream URL:', streamData)
-      setStreamData(streamData) // Added this line to actually set the stream data
-      // In a real implementation, you would use this URL to play the stream
+      console.log('Stream URL fetched:', streamData)
+      
+      // Validate stream data
+      if (streamData && streamData.stream_url) {
+        setStreamData(streamData)
+      } else {
+        console.error('Invalid stream data received:', streamData)
+        setStreamData({ stream_url: null }) // Set to null object to show error state
+      }
     } catch (error) {
       console.error('Failed to fetch stream URL:', error)
+      setStreamData({ stream_url: null }) // Set to null object to show error state
     }
   }
 
@@ -129,8 +143,42 @@ export default function RoomCctvsPage() {
     return () => window.removeEventListener('keydown', handleEsc)
   }, [])
 
+  // Initialize HLS playback when streamData changes
+  useEffect(() => {
+    if (!showLiveStream || !streamData?.stream_url) return
+    const url = streamData.stream_url as string
+    const video = videoRef.current
+    if (!video) return
+
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = url
+      video.play().catch(() => {})
+      return
+    }
+
+    let hls: any
+    ;(async () => {
+      const mod = await import('hls.js')
+      const Hls = mod.default
+      if (Hls.isSupported()) {
+        hls = new Hls({ maxBufferLength: 10 })
+        hls.loadSource(url)
+        hls.attachMedia(video)
+      } else {
+        video.src = url
+      }
+    })()
+
+    return () => {
+      if (hls) {
+        try { hls.destroy() } catch {}
+      }
+    }
+  }, [showLiveStream, streamData])
+
   return (
-    <main className="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-900 py-8 min-h-[calc(100vh-140px)]">
+    // Fixed background gradient to ensure full width and proper height
+    <main className="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-900 py-8 min-h-screen w-full">
       {/* Header - responsive design */}
       <div className="pt-4 pb-6 px-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -167,7 +215,6 @@ export default function RoomCctvsPage() {
           </div>
         ) : filteredCctvs.length === 0 ? (
           <div className="text-center py-12">
-            {icons.Video && <icons.Video className="w-12 h-12 text-white mx-auto mb-4" />}
             <p className="text-white font-semibold">No CCTV cameras available</p>
           </div>
         ) : (
@@ -214,7 +261,7 @@ export default function RoomCctvsPage() {
             {/* Header */}
             <div className="flex items-center justify-between p-4 md:p-6 border-b border-white/10">
               <h2 className="text-lg md:text-xl font-semibold text-white flex items-center gap-2">
-                {icons.Video && <icons.Video className="w-5 h-5 text-red-400" />}
+                {icons.Video && <icons.Video className="w-4 h-4 md:w-5 md:h-5 text-white" />}
                 <span className="truncate max-w-[150px] sm:max-w-xs md:max-w-md">{selectedCctv.name}</span>
               </h2>
               <button 
@@ -230,13 +277,12 @@ export default function RoomCctvsPage() {
             <div ref={videoPlayerRef} className="aspect-video bg-black/50 flex items-center justify-center flex-grow relative">
               {streamData && streamData.stream_url ? (
                 <video 
-                  src={streamData.stream_url} 
+                  ref={videoRef}
                   autoPlay 
                   controls 
                   className="w-full h-full object-contain"
-                  onError={(e) => {
-                    console.error('Video playback error:', e);
-                    // Handle playback errors gracefully
+                  onError={() => {
+                    console.warn('Video playback error')
                   }}
                 >
                   Your browser does not support the video tag.
@@ -251,6 +297,12 @@ export default function RoomCctvsPage() {
                         <p className="truncate">{selectedCctv.ip_address}</p>
                         <p>{selectedCctv.username}</p>
                       </div>
+                    </>
+                  ) : streamData && streamData.stream_url === null ? (
+                    <>
+                      {icons.Video && <icons.Video className="w-8 h-8 text-white/30 mx-auto mb-3" />}
+                      <p className="text-white font-semibold">Stream unavailable</p>
+                      <p className="text-white/50 text-sm mt-2">Please check the camera connection</p>
                     </>
                   ) : (
                     <>
