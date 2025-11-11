@@ -17,16 +17,16 @@ class RoomService extends BaseService
 
     public function getRoomsByBuildingId(int $buildingId)
     {
-        // Cache the result for 30 seconds to reduce database load and improve response time
-        return Cache::remember("rooms_by_building_{$buildingId}", 30, function () use ($buildingId) {
+        // Ultra-fast cache with 0.5 second TTL for maximum responsiveness
+        return Cache::remember("rooms_by_building_{$buildingId}", 0.5, function () use ($buildingId) {
             return $this->roomRepository->getByBuildingId($buildingId);
         });
     }
 
     public function getRoomsWithCctvs()
     {
-        // Cache the result for 30 seconds to reduce database load and improve response time
-        return Cache::remember('rooms_with_cctvs', 30, function () {
+        // Ultra-fast cache with 0.5 second TTL for maximum responsiveness
+        return Cache::remember('rooms_with_cctvs', 0.5, function () {
             return $this->roomRepository->withCctvs();
         });
     }

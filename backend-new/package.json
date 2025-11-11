@@ -3,9 +3,9 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "dev": "vite",
-        "build": "vite build",
-        "preview": "vite preview",
+        "dev": "cd ../v0-pertamina-frontend-build && npm run dev",
+        "build": "cd ../v0-pertamina-frontend-build && npm run build",
+        "preview": "cd ../v0-pertamina-frontend-build && npm run start",
         "start": "node server.js"
     },
     "devDependencies": {

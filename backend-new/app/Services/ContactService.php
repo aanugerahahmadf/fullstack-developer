@@ -17,8 +17,8 @@ class ContactService extends BaseService
 
     public function getContactInfo()
     {
-        // Cache contact info for 30 seconds for better performance
-        return Cache::remember('contact_info', 30, function () {
+        // Ultra-fast cache with 0.5 second TTL for maximum responsiveness
+        return Cache::remember('contact_info', 0.5, function () {
             return $this->contactRepository->getFirst();
         });
     }

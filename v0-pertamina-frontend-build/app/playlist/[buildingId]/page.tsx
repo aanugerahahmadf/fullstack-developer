@@ -79,7 +79,8 @@ export default function BuildingRoomsPage() {
   )
 
   return (
-    <main className="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-900 py-8 min-h-[calc(100vh-140px)]">
+    // Fixed background gradient to ensure full width and proper height
+    <main className="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-900 py-8 min-h-screen w-full">
       {/* Header - responsive design */}
       <div className="pt-4 pb-6 px-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">

@@ -9,7 +9,7 @@ interface ApiResponse<T> {
 }
 
 // Helper function to make API requests with improved error handling
-export async function api<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+export async function api<T>(endpoint: string, options: RequestInit = {}, timeoutMs: number = 10000): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   
   const config: RequestInit = {
@@ -18,8 +18,8 @@ export async function api<T>(endpoint: string, options: RequestInit = {}): Promi
       'Content-Type': 'application/json',
       ...options.headers,
     },
-    // Set timeout to 10 seconds as per project requirements
-    signal: AbortSignal.timeout(10000),
+    // Allow caller to override timeout
+    signal: options.signal ?? AbortSignal.timeout(timeoutMs),
     ...options,
   };
 
@@ -45,8 +45,6 @@ export async function api<T>(endpoint: string, options: RequestInit = {}): Promi
     throw new Error('Unknown API request error');
   }
 }
-
-
 
 // Define TypeScript interfaces for API responses
 interface Stats {
@@ -199,19 +197,44 @@ export const getCctvsByRoom = async (roomId: string): Promise<Cctv[]> => {
 };
 
 export const getCctvStreamUrl = async (cctvId: string): Promise<StreamData> => {
-  try {
-    const response = await api<StreamData>(`/cctvs/stream/${cctvId}`);
-    return response;
-  } catch (error) {
-    console.error(`Error fetching stream URL for CCTV ${cctvId}:`, error);
-    // Return empty object to prevent app crash
-    return { stream_url: '' };
+  // Retry a few times because the streaming server may take a moment to warm up
+  const attempts = [12000, 15000, 20000]; // timeouts per attempt
+  for (let i = 0; i < attempts.length; i++) {
+    try {
+      const response = await api<StreamData>(`/cctvs/stream/${cctvId}`, {}, attempts[i]);
+      return response;
+    } catch (error) {
+      if (i === attempts.length - 1) {
+        console.error(`Error fetching stream URL for CCTV ${cctvId}:`, error);
+      } else {
+        // Small delay before retry
+        await new Promise((res) => setTimeout(res, 750));
+      }
+    }
   }
+  // Return empty object to prevent app crash
+  return { stream_url: '' };
 };
 
-export const getProductionTrends = async (startDate: string, endDate: string): Promise<ProductionTrend[]> => {
+export const getProductionTrends = async (startDate?: string, endDate?: string): Promise<ProductionTrend[]> => {
   try {
-    const response = await api<ProductionTrend[]>(`/chart/production-trends?start_date=${startDate}&end_date=${endDate}`);
+    // Build query string with optional parameters
+    let url = '/chart/production-trends';
+    const queryParams = new URLSearchParams();
+    
+    if (startDate) {
+      queryParams.append('start_date', startDate);
+    }
+    
+    if (endDate) {
+      queryParams.append('end_date', endDate);
+    }
+    
+    if (queryParams.toString()) {
+      url += `?${queryParams.toString()}`;
+    }
+    
+    const response = await api<ProductionTrend[]>(url);
     return response;
   } catch (error) {
     console.error('Error fetching production trends:', error);
@@ -233,8 +256,9 @@ export const getUnitPerformance = async (): Promise<UnitPerformance[]> => {
 
 export const getContacts = async (): Promise<Contact[]> => {
   try {
-    const response = await api<Contact[]>('/contact');
-    return response;
+    const response = await api<Contact | null>('/contact');
+    // Convert single contact object to array
+    return response ? [response] : [];
   } catch (error) {
     console.error('Error fetching contacts:', error);
     // Return empty array to prevent app crash

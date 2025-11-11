@@ -15,12 +15,16 @@ class ChartController extends BaseApiController
         $this->chartService = $chartService;
     }
 
-    public function productionTrends()
+    public function productionTrends(Request $request)
     {
         try {
-            $data = $this->chartService->getProductionTrends();
+            // Get optional date parameters
+            $startDate = $request->query('start_date');
+            $endDate = $request->query('end_date');
+
+            $data = $this->chartService->getProductionTrends($startDate, $endDate);
             // For sample data, return directly without using ChartResource
-            return $this->success($this->optimizeData(request(), $data), 'Production trends retrieved successfully');
+            return $this->success($this->optimizeData($request, $data), 'Production trends retrieved successfully');
         } catch (\Exception $e) {
             return $this->error('Failed to retrieve production trends: ' . $e->getMessage(), 500);
         }
@@ -32,11 +36,7 @@ class ChartController extends BaseApiController
             $data = $this->chartService->getUnitPerformance();
             // For sample data, return directly without using ChartResource
             // Ensure fast JSON response
-            return response()->json([
-                'success' => true,
-                'message' => 'Unit performance data retrieved successfully',
-                'data' => $this->optimizeData(request(), $data)
-            ], 200);
+            return $this->success($this->optimizeData(request(), $data), 'Unit performance data retrieved successfully');
         } catch (\Exception $e) {
             return $this->error('Failed to retrieve unit performance data: ' . $e->getMessage(), 500);
         }

@@ -127,7 +127,8 @@ export default function PlaylistPage() {
     }, [])
 
   return (
-    <main className="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-950 py-8 min-h-[calc(100vh-140px)] w-full">
+    // Fixed background gradient to match other pages and ensure full width
+    <main className="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-900 py-8 min-h-screen w-full">
       {/* Header */}
       <div className="pt-4 pb-6 px-4">
         <div className="flex justify-center items-center gap-4">
@@ -193,5 +194,3 @@ export default function PlaylistPage() {
     </main>
   )
 }
-
-

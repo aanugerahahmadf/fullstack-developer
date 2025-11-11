@@ -9,16 +9,35 @@ class FrontendController extends Controller
 {
     public function serve(Request $request)
     {
+        Log::info('FrontendController::serve called for path: ' . $request->path());
+
         // For API requests, we should handle them in Laravel, not block them
         if (str_starts_with($request->path(), 'api/')) {
+            Log::info('Routing to API: ' . $request->path());
             // Let Laravel handle API routes normally
             // This will allow the API routes to be processed by Laravel's router
             return app()->handle($request);
         }
 
-        // For admin requests (Filament), don't serve frontend
-        if (str_starts_with($request->path(), 'admin')) {
-            abort(404);
+        // For admin requests (Filament), let Laravel handle them normally
+        if (str_starts_with($request->path(), 'admin/') || $request->path() === 'admin') {
+            Log::info('Routing to Admin: ' . $request->path());
+            // Let Laravel handle admin routes normally
+            return app()->handle($request);
+        }
+
+        // For Filament system routes
+        if (str_starts_with($request->path(), 'filament/')) {
+            Log::info('Routing to Filament: ' . $request->path());
+            // Let Laravel handle Filament system routes normally
+            return app()->handle($request);
+        }
+
+        // For broadcasting routes
+        if (str_starts_with($request->path(), 'broadcasting/')) {
+            Log::info('Routing to Broadcasting: ' . $request->path());
+            // Let Laravel handle broadcasting routes normally
+            return app()->handle($request);
         }
 
         // Proxy the request to the Next.js frontend running on port 3000

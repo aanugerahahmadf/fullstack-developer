@@ -19,25 +19,18 @@ class ContactController extends BaseApiController
     public function index()
     {
         try {
-            Log::info('Fetching contact information');
+            // Ultra-fast response with minimal logging
             $contact = $this->contactService->getContactInfo();
 
             // Check if contact exists
             if ($contact) {
-                Log::info('Contact found', ['contact_id' => $contact->id]);
                 // Use single resource, not collection, since getFirst() returns a single object
                 return $this->success(new ContactResource($contact), 'Contact information retrieved successfully');
             }
 
-            Log::info('No contact found');
             // Return empty data if no contact found
             return $this->success(null, 'No contact information available');
         } catch (\Exception $e) {
-            Log::error('Error fetching contact information', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
             return $this->error('Failed to retrieve contact information', 500);
         }
     }

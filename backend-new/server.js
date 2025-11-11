@@ -20,29 +20,29 @@ const __dirname = path.dirname(__filename);
 app.use(express.static(path.join(__dirname, '../v0-pertamina-frontend-build/.next/static')));
 app.use('/images', express.static(path.join(__dirname, '../v0-pertamina-frontend-build/public/images')));
 
-// Proxy API requests to the Laravel backend
+// Proxy API requests to the Laravel backend (now running on port 8000)
 app.use('/api', createProxyMiddleware({
-  target: 'http://127.0.0.1:8001',
+  target: 'http://127.0.0.1:8000',
   changeOrigin: true,
   pathRewrite: {
     '^/api': '/api'
   }
 }));
 
-// Proxy admin panel requests to the Laravel backend
+// Proxy admin panel requests to the Laravel backend (now running on port 8000)
 app.use('/admin', createProxyMiddleware({
-  target: 'http://127.0.0.1:8001',
+  target: 'http://127.0.0.1:8000',
   changeOrigin: true
 }));
 
-// Serve the Next.js frontend
+// Serve the Next.js frontend (running on port 3000)
 app.use('/', createProxyMiddleware({
-  target: 'http://localhost:3001',
+  target: 'http://localhost:3000',
   changeOrigin: true,
   ws: true
 }));
 
-// Start the server with optimized settings
+// Start the server with optimized settings on port 8000
 const port = 8000;
 const hostname = '127.0.0.1';
 

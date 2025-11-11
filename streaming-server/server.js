@@ -19,7 +19,7 @@ const config = {
     ping_timeout: 60
   },
   http: {
-    port: 8002,
+    port: 8000, // Changed from 8000 to 8000 to avoid conflict
     allow_origin: '*',
     mediaroot: streamsDir
   }
@@ -29,6 +29,9 @@ const nms = new NodeMediaServer(config);
 
 // Store active FFmpeg processes
 const ffmpegProcesses = new Map();
+
+// Path to FFmpeg executable
+const ffmpegPath = path.join(__dirname, 'ffmpeg', 'extracted', 'ffmpeg-2025-11-10-git-133a0bcb13-essentials_build', 'bin', 'ffmpeg.exe');
 
 nms.on('preConnect', (id, args) => {
   console.log('[NodeEvent on preConnect]', `id=${id} args=${JSON.stringify(args)}`);
@@ -59,22 +62,48 @@ nms.run();
 // Add Express server for additional API endpoints
 const app = express();
 app.use(express.json());
-const PORT = 3002;
+const PORT = 3000;
 
 // API endpoint to start a stream
-app.get('/api/start-stream/:cctvId', async (req, res) => {
+app.post('/api/start-stream/:cctvId', async (req, res) => {
   const { cctvId } = req.params;
+  const { rtsp_url } = req.body; // Get RTSP URL from request body
   
   try {
-    // In a real implementation, you would fetch the RTSP URL from your Laravel backend
-    // For now, we'll simulate this with a test URL
-    const response = await fetch(`http://127.0.0.1:8000/api/cctvs/${cctvId}`);
-    const cctvData = await response.json();
-    const rtspUrl = cctvData.data.ip_rtsp_url;
+    // Check if stream is already running
+    if (ffmpegProcesses.has(cctvId)) {
+      return res.json({ 
+        message: 'Stream already running', 
+        streamUrl: `http://127.0.0.1:8000/live/${cctvId}/index.m3u8` // Updated port
+      });
+    }
     
-    // For testing purposes, we'll use a sample RTSP URL if the above fails
-    // In production, replace this with the actual RTSP URL from the database
-    // const rtspUrl = 'rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov';
+    // Use the provided RTSP URL or fetch from Laravel backend
+    let rtspUrl = rtsp_url;
+    
+    // If no RTSP URL provided in request, fetch from Laravel backend
+    if (!rtspUrl) {
+      try {
+        // Fetch CCTV details from Laravel backend
+        const cctvResponse = await fetch(`http://127.0.0.1:8000/api/cctvs/${cctvId}`);
+        if (cctvResponse.ok) {
+          const cctvData = await cctvResponse.json();
+          if (cctvData.data && cctvData.data.ip_rtsp_url) {
+            rtspUrl = cctvData.data.ip_rtsp_url;
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching CCTV data from Laravel:', error);
+      }
+    }
+    
+    // If still no RTSP URL, use fallback
+    if (!rtspUrl) {
+      rtspUrl = 'rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov';
+    }
+    
+    // Log the RTSP URL being used
+    console.log('Using RTSP URL:', rtspUrl);
     
     // Start FFmpeg process to convert RTSP to HLS
     const hlsOutput = path.join(streamsDir, cctvId);
@@ -99,7 +128,7 @@ app.get('/api/start-stream/:cctvId', async (req, res) => {
     
     console.log('Starting FFmpeg with args:', ffmpegArgs.join(' '));
     
-    const ffmpegProcess = spawn('ffmpeg', ffmpegArgs);
+    const ffmpegProcess = spawn(ffmpegPath, ffmpegArgs);
     
     ffmpegProcess.stdout.on('data', (data) => {
       console.log(`FFmpeg stdout: ${data}`);
@@ -120,7 +149,7 @@ app.get('/api/start-stream/:cctvId', async (req, res) => {
     setTimeout(() => {
       res.json({ 
         message: 'Stream started', 
-        streamUrl: `http://127.0.0.1:8000/live/${cctvId}/index.m3u8` 
+        streamUrl: `http://127.0.0.1:8000/live/${cctvId}/index.m3u8` // Updated port
       });
     }, 2000);
     
@@ -151,7 +180,7 @@ app.get('/api/stream-status/:cctvId', (req, res) => {
   res.json({ 
     cctvId, 
     isRunning,
-    streamUrl: isRunning ? `http://127.0.0.1:8000/live/${cctvId}/index.m3u8` : null
+    streamUrl: isRunning ? `http://127.0.0.1:8000/live/${cctvId}/index.m3u8` : null // Updated port
   });
 });
 
@@ -161,5 +190,5 @@ app.listen(PORT, () => {
 
 console.log('Node Media Server started');
 console.log('RTMP server listening on port 1935');
-console.log('HTTP server listening on port 8000');
+console.log('HTTP server listening on port 8000'); // Updated port
 console.log(`Streaming API server listening on port ${PORT}`);

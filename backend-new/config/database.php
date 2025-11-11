@@ -52,22 +52,24 @@ return [
             'username' => env('DB_USERNAME', 'forge'),
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
+            'charset' => 'utf8',
+            'collation' => 'utf8_general_ci',
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-                PDO::ATTR_PERSISTENT => false, // Disable persistent connections for better performance
+                PDO::ATTR_PERSISTENT => true, // Enable persistent connections for better performance
                 PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true, // Enable buffered queries
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT, // Reduce error handling overhead
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ, // Use objects for better performance
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION sql_mode='STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'",
-                PDO::ATTR_TIMEOUT => 2, // 2 second timeout
+                PDO::ATTR_TIMEOUT => 1, // 1 second timeout for faster failures
                 PDO::MYSQL_ATTR_FOUND_ROWS => true, // Enable FOUND_ROWS for stateful operations
-            ]) : [],
+                PDO::ATTR_EMULATE_PREPARES => false, // Use real prepared statements
+                PDO::MYSQL_ATTR_DIRECT_QUERY => true, // Enable direct queries
+            ]) : []
         ],
 
         'pgsql' => [

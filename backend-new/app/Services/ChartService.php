@@ -16,10 +16,19 @@ class ChartService extends BaseService
         $this->chartRepository = $chartRepository;
     }
 
-    public function getProductionTrends()
+    public function getProductionTrends($startDate = null, $endDate = null)
     {
-        // Reduce cache time to 1 second for near real-time updates
-        return Cache::remember('production_trends', 1, function () {
+        // Create cache key based on parameters
+        $cacheKey = 'production_trends';
+        if ($startDate) {
+            $cacheKey .= '_from_' . $startDate;
+        }
+        if ($endDate) {
+            $cacheKey .= '_to_' . $endDate;
+        }
+
+        // Ultra-fast cache with 0.5 second TTL for maximum responsiveness
+        return Cache::remember($cacheKey, 0.5, function () use ($startDate, $endDate) {
             // In a real application, this would retrieve actual chart data from the repository
             // For now, we'll return sample data but in the future this would come from the database
             // Using actual dates for the current month
@@ -38,8 +47,8 @@ class ChartService extends BaseService
 
     public function getUnitPerformance()
     {
-        // Reduce cache time to 1 second for near real-time updates
-        return Cache::remember('unit_performance', 1, function () {
+        // Ultra-fast cache with 0.5 second TTL for maximum responsiveness
+        return Cache::remember('unit_performance', 0.5, function () {
             // Get actual building names from the database with optimized query
             $buildings = Building::select('name')->get();
 

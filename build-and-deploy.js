@@ -1,6 +1,7 @@
-const { spawn, execSync } = require('child_process');
+const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 console.log('🚀 Starting Build and Deployment Process...');
 console.log('==========================================\n');
@@ -33,27 +34,28 @@ function executeCommand(command, cwd, name) {
   });
 }
 
-// Function to copy directory recursively
-function copyDir(src, dest) {
-  fs.mkdirSync(dest, { recursive: true });
-  const entries = fs.readdirSync(src, { withFileTypes: true });
+// Function to clean previous build artifacts
+function cleanPreviousBuild() {
+  console.log('🧹 Cleaning previous build artifacts...');
   
-  for (const entry of entries) {
-    const srcPath = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
-    
-    if (entry.isDirectory()) {
-      copyDir(srcPath, destPath);
-    } else {
-      fs.copyFileSync(srcPath, destPath);
-    }
+  const standaloneDir = path.join(__dirname, 'v0-pertamina-frontend-build', '.next', 'standalone');
+  
+  // Remove standalone directory if it exists
+  if (fs.existsSync(standaloneDir)) {
+    fs.rmSync(standaloneDir, { recursive: true, force: true });
+    console.log('✅ Previous standalone directory removed');
   }
+  
+  console.log('✅ Cleaning completed\n');
 }
 
 // Main build and deployment process
 async function buildAndDeploy() {
   try {
-    // 1. Build Next.js frontend
+    // 1. Clean previous build artifacts
+    cleanPreviousBuild();
+    
+    // 2. Build Next.js frontend
     console.log('📦 Building Next.js frontend...');
     await executeCommand(
       'npm run build', 
@@ -61,18 +63,32 @@ async function buildAndDeploy() {
       'Next.js Build'
     );
     
-    // 2. Copy public assets to standalone directory if needed
+    // 3. Copy public assets to standalone directory if needed
     const standaloneDir = path.join(__dirname, 'v0-pertamina-frontend-build', '.next', 'standalone');
     const publicDir = path.join(__dirname, 'v0-pertamina-frontend-build', 'public');
     const standalonePublicDir = path.join(standaloneDir, 'public');
     
     if (fs.existsSync(publicDir) && fs.existsSync(standaloneDir)) {
       console.log('📂 Copying public assets to standalone directory...');
-      copyDir(publicDir, standalonePublicDir);
+      
+      // Create public directory in standalone if it doesn't exist
+      if (!fs.existsSync(standalonePublicDir)) {
+        fs.mkdirSync(standalonePublicDir, { recursive: true });
+      }
+      
+      // Copy all files from public to standalone public
+      const files = fs.readdirSync(publicDir);
+      files.forEach(file => {
+        const src = path.join(publicDir, file);
+        const dest = path.join(standalonePublicDir, file);
+        fs.copyFileSync(src, dest);
+        console.log(`   Copied ${file}`);
+      });
+      
       console.log('✅ Public assets copied successfully\n');
     }
     
-    // 3. Install backend dependencies for production
+    // 4. Install backend dependencies for production
     console.log('📦 Installing backend dependencies...');
     await executeCommand(
       'composer install --no-dev --optimize-autoloader', 
@@ -80,7 +96,7 @@ async function buildAndDeploy() {
       'Backend Dependencies Installation'
     );
     
-    // 4. Optimize Laravel for production
+    // 5. Optimize Laravel for production
     console.log('⚙️  Optimizing Laravel for production...');
     await executeCommand(
       'php artisan config:cache', 
@@ -102,40 +118,20 @@ async function buildAndDeploy() {
     
     console.log('✅ Laravel optimization completed\n');
     
-    // 5. Generate deployment information
-    const deployInfo = {
-      timestamp: new Date().toISOString(),
-      version: '1.0.0',
-      buildPath: path.join(__dirname, 'deploy'),
-      components: {
-        frontend: {
-          path: path.join(__dirname, 'v0-pertamina-frontend-build', '.next'),
-          type: 'Next.js'
-        },
-        backend: {
-          path: path.join(__dirname, 'backend-new'),
-          type: 'Laravel'
-        }
-      }
-    };
-    
-    // Save deployment information
-    const deployDir = path.join(__dirname, 'deploy');
-    fs.mkdirSync(deployDir, { recursive: true });
-    fs.writeFileSync(
-      path.join(deployDir, 'deploy-info.json'),
-      JSON.stringify(deployInfo, null, 2)
+    // 6. Install streaming server dependencies
+    console.log('📦 Installing streaming server dependencies...');
+    await executeCommand(
+      'npm install', 
+      path.join(__dirname, 'streaming-server'), 
+      'Streaming Server Dependencies Installation'
     );
     
-    console.log('✅ Deployment information saved\n');
+    console.log('✅ Streaming server dependencies installed\n');
     
     console.log('🎉 Build and deployment process completed successfully!');
-    console.log('📁 Deployment artifacts are located in the "deploy" directory');
     console.log('📝 Next steps:');
-    console.log('   1. Upload the contents of the deploy directory to your server');
-    console.log('   2. Configure your web server to serve the Laravel backend');
-    console.log('   3. Ensure the Next.js standalone server is running');
-    console.log('   4. Set up your environment variables on the production server');
+    console.log('   1. The application is now built and ready to run');
+    console.log('   2. Use start-fullstack.js to start all services');
     
   } catch (error) {
     console.error('💥 Build and deployment process failed:', error.message);

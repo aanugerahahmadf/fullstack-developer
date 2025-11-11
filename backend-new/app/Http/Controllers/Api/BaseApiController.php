@@ -27,10 +27,13 @@ class BaseApiController extends Controller
             $response['data'] = $data;
         }
 
-        // Use JSON encoding with minimal options for maximum performance
+        // Use JSON encoding with maximum performance options
         return response()->json($response, $statusCode, [
             'Content-Type' => 'application/json',
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            'X-Content-Type-Options' => 'nosniff',
+            'X-Frame-Options' => 'DENY',
+            'X-XSS-Protection' => '1; mode=block',
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);
     }
 
     /**
@@ -52,10 +55,11 @@ class BaseApiController extends Controller
             $response['data'] = $data;
         }
 
-        // Use JSON encoding with minimal options for maximum performance
+        // Use JSON encoding with maximum performance options
         return response()->json($response, $statusCode, [
             'Content-Type' => 'application/json',
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            'X-Content-Type-Options' => 'nosniff',
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);
     }
 
     /**

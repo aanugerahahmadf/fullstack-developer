@@ -27,14 +27,14 @@ class CctvRepository extends BaseRepository
     {
         $cctv = $this->find($id);
         if ($cctv) {
-            // In a production environment, you would start the actual stream conversion here
-            // For now, we'll return a URL that points to our streaming server
+            // Start the actual stream conversion by calling the streaming server
             $streamUrl = 'http://127.0.0.1:8000/live/' . $id . '/index.m3u8';
 
-            // In a real implementation, you would make an API call to your streaming server:
             try {
-                // Uncomment this when you have FFmpeg properly installed and configured
-                $response = Http::timeout(10)->get('http://127.0.0.1:3002/api/start-stream/' . $id);
+                // Make an API call to the streaming server to start the stream with the actual RTSP URL
+                $response = Http::timeout(10)->post('http://127.0.0.1:3000/api/start-stream/' . $id, [
+                    'rtsp_url' => $cctv->ip_rtsp_url
+                ]);
 
                 if ($response->successful()) {
                     $streamData = $response->json();
@@ -43,6 +43,7 @@ class CctvRepository extends BaseRepository
             } catch (\Exception $e) {
                 Log::error('Failed to start stream', [
                     'cctv_id' => $id,
+                    'rtsp_url' => $cctv->ip_rtsp_url,
                     'error' => $e->getMessage()
                 ]);
                 // Fall back to direct URL
