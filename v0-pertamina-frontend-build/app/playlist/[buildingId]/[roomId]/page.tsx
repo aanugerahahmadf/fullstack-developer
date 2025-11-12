@@ -197,6 +197,7 @@ export default function RoomCctvsPage() {
         <div className="relative">
           {icons.Search && <icons.Search className="absolute left-3 top-3 text-white" size={20} />}
           <input
+            key="search-input"
             type="text"
             placeholder="Search CCTV..."
             value={searchTerm}
@@ -261,7 +262,6 @@ export default function RoomCctvsPage() {
             {/* Header */}
             <div className="flex items-center justify-between p-4 md:p-6 border-b border-white/10">
               <h2 className="text-lg md:text-xl font-semibold text-white flex items-center gap-2">
-                {icons.Video && <icons.Video className="w-4 h-4 md:w-5 md:h-5 text-white" />}
                 <span className="truncate max-w-[150px] sm:max-w-xs md:max-w-md">{selectedCctv.name}</span>
               </h2>
               <button 
