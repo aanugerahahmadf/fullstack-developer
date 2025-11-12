@@ -124,7 +124,7 @@ export default function ContactPage() {
                     onClick={() => handleEmailClick(contact.email)}
                   >
                     <div className="flex flex-col items-center justify-center text-center">
-                      {icons.Mail && <icons.Mail className="w-6 h-6 text-blue-400 mb-3" />}
+                      {icons.Mail && <icons.Mail className="w-10 h-10 text-blue-400 mb-3" />}
                       <div>
                         <p className="text-white text-base md:text-lg font-bold mb-1">Email</p>
                         <p className="text-white text-base">{contact.email}</p>
@@ -140,7 +140,7 @@ export default function ContactPage() {
                     onClick={() => handlePhoneClick(contact.phone)}
                   >
                     <div className="flex flex-col items-center justify-center text-center">
-                      {icons.Phone && <icons.Phone className="w-6 h-6 text-green-400 mb-3" />}
+                      {icons.Phone && <icons.Phone className="w-10 h-10 text-green-400 mb-3" />}
                       <div>
                         <p className="text-white text-base md:text-lg font-bold mb-1">Phone</p>
                         <p className="text-white text-base">{contact.phone}</p>
@@ -156,7 +156,7 @@ export default function ContactPage() {
                     onClick={() => handleInstagramClick(contact.instagram)}
                   >
                     <div className="flex flex-col items-center justify-center text-center">
-                      {icons.Instagram && <icons.Instagram className="w-6 h-6 text-pink-400 mb-3" />}
+                      {icons.Instagram && <icons.Instagram className="w-10 h-10 text-pink-400 mb-3" />}
                       <div>
                         <p className="text-white text-base md:text-lg font-bold mb-1">Instagram</p>
                         <p className="text-white text-base">{contact.instagram}</p>
@@ -172,11 +172,11 @@ export default function ContactPage() {
               contact.address && (
                 <div 
                   key={`address-${contact.id}`} 
-                  className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[120px] md:min-h-[140px] col-span-1 md:col-span-2 lg:col-span-3 cursor-pointer hover:bg-white/20 transition-all duration-200 flex items-center justify-center shadow-lg"
+                  className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[160px] md:min-h-[275px] col-span-1 md:col-span-2 lg:col-span-3 cursor-pointer hover:bg-white/20 transition-all duration-200 flex items-center justify-center shadow-lg"
                   onClick={() => handleAddressClick(contact.address)}
                 >
                   <div className="flex flex-col items-center justify-center text-center">
-                    {icons.MapPin && <icons.MapPin className="w-6 h-6 text-red-400 mb-3" />}
+                    {icons.MapPin && <icons.MapPin className="w-10 h-10 text-red-400 mb-3" />}
                     <div>
                       <p className="text-white text-base md:text-lg font-bold mb-1">Address</p>
                       <p className="text-white text-base">{contact.address}</p>

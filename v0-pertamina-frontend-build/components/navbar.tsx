@@ -74,28 +74,28 @@ export default function Navbar() {
           <div className="hidden md:flex gap-8">
             <Link 
               href="/" 
-              className="text-gray-1000 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
+              className="text-gray-700 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
               prefetch={true}
             >
               Home
             </Link>
             <Link 
               href="/maps" 
-              className="text-gray-1000 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
+              className="text-gray-700 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
               prefetch={true}
             >
               Maps
             </Link>
             <Link 
               href="/playlist" 
-              className="text-gray-1000 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
+              className="text-gray-700 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
               prefetch={true}
             >
               Playlist
             </Link>
             <Link 
               href="/contact" 
-              className="text-gray-1000 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
+              className="text-gray-700 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
               prefetch={true}
             >
               Contact
@@ -104,7 +104,7 @@ export default function Navbar() {
 
           {/* Mobile Menu Button */}
           <button 
-            className="md:hidden text-gray-1000 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400" 
+            className="md:hidden text-gray-700 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400" 
             onClick={toggleMobileMenu}
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           >
@@ -124,7 +124,7 @@ export default function Navbar() {
           <div className="flex flex-col gap-3">
             <Link 
               href="/" 
-              className="text-gray-1000 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
+              className="text-gray-700 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
               onClick={closeMobileMenu}
               prefetch={true}
             >
@@ -132,7 +132,7 @@ export default function Navbar() {
             </Link>
             <Link 
               href="/maps" 
-              className="text-gray-1000 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
+              className="text-gray-700 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
               onClick={closeMobileMenu}
               prefetch={true}
             >
@@ -140,7 +140,7 @@ export default function Navbar() {
             </Link>
             <Link 
               href="/playlist" 
-              className="text-gray-1000 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
+              className="text-gray-700 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
               onClick={closeMobileMenu}
               prefetch={true}
             >
@@ -148,7 +148,7 @@ export default function Navbar() {
             </Link>
             <Link 
               href="/contact" 
-              className="text-gray-1000 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
+              className="text-gray-700 font-semibold block py-3 px-4 rounded-lg hover:text-gray-400"
               onClick={closeMobileMenu}
               prefetch={true}
             >
