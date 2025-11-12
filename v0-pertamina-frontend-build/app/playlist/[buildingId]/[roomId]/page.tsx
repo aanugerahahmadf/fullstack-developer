@@ -93,20 +93,19 @@ export default function RoomCctvsPage() {
   )
 
   const handleLiveStream = async (cctv: any) => {
+    // Show modal immediately for instant UI feedback (no delay)
+    setSelectedCctv(cctv)
+    setShowLiveStream(true)
+    setStreamData(null) // Reset stream data before fetching new one
+    
+    // Fetch stream URL in background (non-blocking)
     try {
-      setSelectedCctv(cctv)
-      setShowLiveStream(true)
-      setStreamData(null) // Reset stream data before fetching new one
-      
-      // Fetch stream URL
       const streamData = await getCctvStreamUrl(cctv.id)
-      console.log('Stream URL fetched:', streamData)
       
       // Validate stream data
       if (streamData && streamData.stream_url) {
         setStreamData(streamData)
       } else {
-        console.error('Invalid stream data received:', streamData)
         setStreamData({ stream_url: null }) // Set to null object to show error state
       }
     } catch (error) {
@@ -243,7 +242,8 @@ export default function RoomCctvsPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleLiveStream(cctv)}
-                    className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                    className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-75 flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-95"
+                    style={{ touchAction: 'manipulation' }}
                   >
                     {icons.Play && <icons.Play size={16} />}
                     <span className="text-sm">LIVE STREAM</span>
@@ -266,7 +266,8 @@ export default function RoomCctvsPage() {
               </h2>
               <button 
                 onClick={() => setShowLiveStream(false)} 
-                className="text-white/70 hover:text-white transition p-1"
+                className="text-white/70 hover:text-white active:opacity-70 transition-all duration-75 p-1"
+                style={{ touchAction: 'manipulation' }}
                 aria-label="Close"
               >
                 <span className="text-2xl font-light">×</span>
@@ -319,7 +320,8 @@ export default function RoomCctvsPage() {
               <div className="flex gap-2">
                 <button 
                   onClick={handleFullscreen}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-sm"
+                  className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 active:from-green-800 active:to-green-900 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-75 shadow-md hover:shadow-lg active:scale-95 text-sm"
+                  style={{ touchAction: 'manipulation' }}
                 >
                   Full Screen
                 </button>

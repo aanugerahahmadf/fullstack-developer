@@ -32,10 +32,10 @@ function startProcess(command, args, cwd, name) {
   return process;
 }
 
-// Start Laravel backend (PHP server) on port 8000
+// Start Laravel backend (PHP server) on port 8000 with optimized settings
 const laravelProcess = startProcess(
   'php', 
-  ['artisan', 'serve', '--port=8000'], 
+  ['-d', 'output_buffering=0', '-d', 'zlib.output_compression=Off', 'artisan', 'serve', '--port=8000', '--host=127.0.0.1'], 
   path.join(__dirname, 'backend-new'), 
   'Laravel Backend'
 );
@@ -77,6 +77,7 @@ process.on('SIGTERM', () => {
 setTimeout(() => {
   console.log('\n✅ Fullstack application startup initiated!');
   console.log('🌐 Access your application at: http://127.0.0.1:8000');
+  console.log('🌐 Frontend development server: http://127.0.0.1:3000');
   console.log('📡 Streaming server RTMP available on port 1935');
   console.log('📡 Streaming server HTTP available on port 8000');
   console.log('📡 Streaming server API available on port 3000');

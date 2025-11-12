@@ -122,4 +122,33 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Ultra-fast button responsiveness - no delay, no buffering */
+  button {
+    touch-action: manipulation; /* Disable double-tap zoom for instant clicks */
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight delay */
+    user-select: none; /* Prevent text selection delay */
+    cursor: pointer;
+    will-change: transform, opacity; /* Optimize for animations */
+    backface-visibility: hidden; /* Optimize rendering */
+    transform: translateZ(0); /* Force GPU acceleration */
+  }
+  
+  /* Instant button feedback - no transition delay */
+  button:active {
+    transform: scale(0.98) translateZ(0); /* Instant press feedback */
+    transition: transform 0.05s; /* Ultra-fast transition */
+  }
+  
+  /* Optimize all interactive elements */
+  a, button, [role="button"] {
+    pointer-events: auto; /* Ensure clicks work immediately */
+    -webkit-touch-callout: none; /* Disable long-press menu on mobile */
+  }
+  
+  /* Disable any potential delays */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }

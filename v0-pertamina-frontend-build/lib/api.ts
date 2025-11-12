@@ -1,6 +1,13 @@
 // API configuration for the frontend to communicate directly with the backend
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
+// In-memory cache for ultra-fast responses (no buffering)
+const cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+const CACHE_TTL = 500; // 500ms cache for maximum speed
+
+// Request deduplication to prevent duplicate API calls
+const pendingRequests = new Map<string, Promise<any>>();
+
 // Define response wrapper interface
 interface ApiResponse<T> {
   success: boolean;
@@ -8,42 +15,105 @@ interface ApiResponse<T> {
   data: T;
 }
 
-// Helper function to make API requests with improved error handling
-export async function api<T>(endpoint: string, options: RequestInit = {}, timeoutMs: number = 10000): Promise<T> {
+// Helper function to make API requests with improved error handling and caching
+export async function api<T>(endpoint: string, options: RequestInit = {}, timeoutMs: number = 5000): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
+  const cacheKey = `${url}${JSON.stringify(options)}`;
+  
+  // Check cache first (ultra-fast response)
+  const cached = cache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < cached.ttl) {
+    return cached.data as T;
+  }
+  
+  // Check if request is already pending (deduplication)
+  if (pendingRequests.has(cacheKey)) {
+    return pendingRequests.get(cacheKey) as Promise<T>;
+  }
   
   const config: RequestInit = {
-    credentials: 'include', // Include credentials for CORS requests
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache', // Disable browser caching, use our cache
+      'X-Requested-With': 'XMLHttpRequest',
       ...options.headers,
     },
-    // Allow caller to override timeout
+    // Shorter timeout for faster failure
     signal: options.signal ?? AbortSignal.timeout(timeoutMs),
     ...options,
   };
+  
+  // Create request promise
+  const requestPromise = (async () => {
 
-  try {
-    const response = await fetch(url, config);
-    
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-    }
-    
-    const result: ApiResponse<T> = await response.json();
-    return result.data;
-  } catch (error) {
-    console.error('API request error:', error);
-    // Provide more detailed error information
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        throw new Error('API request timeout: The request took too long to complete');
+    try {
+      const response = await fetch(url, config);
+      
+      if (!response.ok) {
+        let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.text();
+          if (errorData) {
+            const parsed = JSON.parse(errorData);
+            errorMessage = parsed.message || parsed.error || errorMessage;
+          }
+        } catch (e) {
+          // If parsing fails, use default message
+        }
+        throw new Error(errorMessage);
       }
-      // Re-throw the error to be handled by the calling function
-      throw error;
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('API response is not JSON');
+      }
+      
+      const result: ApiResponse<T> = await response.json();
+      
+      if (!result || typeof result !== 'object') {
+        throw new Error('Invalid API response format');
+      }
+      
+      if (result.success === false) {
+        throw new Error(result.message || 'API request failed');
+      }
+      
+      // Cache the result for ultra-fast subsequent requests (no buffering)
+      cache.set(cacheKey, {
+        data: result.data,
+        timestamp: Date.now(),
+        ttl: CACHE_TTL
+      });
+      
+      return result.data;
+    } catch (error) {
+      // Provide more detailed error information
+      if (error instanceof Error) {
+        if (error.name === 'AbortError' || error.message.includes('timeout')) {
+          throw new Error('API request timeout: The request took too long to complete. Please check if the backend server is running on http://127.0.0.1:8000');
+        }
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('ERR_CONNECTION_REFUSED')) {
+          throw new Error('Cannot connect to backend server. Please ensure the Laravel backend is running on http://127.0.0.1:8000');
+        }
+        throw error;
+      }
+      throw new Error('Unknown API request error');
+    } finally {
+      // Remove from pending requests
+      pendingRequests.delete(cacheKey);
     }
-    throw new Error('Unknown API request error');
-  }
+  })();
+  
+  // Store pending request for deduplication
+  pendingRequests.set(cacheKey, requestPromise);
+  
+  return requestPromise;
+}
+
+// Clear cache function (useful for manual cache invalidation)
+export function clearApiCache() {
+  cache.clear();
 }
 
 // Define TypeScript interfaces for API responses

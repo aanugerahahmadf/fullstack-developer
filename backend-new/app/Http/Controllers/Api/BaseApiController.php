@@ -27,13 +27,22 @@ class BaseApiController extends Controller
             $response['data'] = $data;
         }
 
-        // Use JSON encoding with maximum performance options
-        return response()->json($response, $statusCode, [
+        // Use JSON encoding with maximum performance options and no buffering
+        $jsonResponse = response()->json($response, $statusCode, [
             'Content-Type' => 'application/json',
             'X-Content-Type-Options' => 'nosniff',
             'X-Frame-Options' => 'DENY',
             'X-XSS-Protection' => '1; mode=block',
+            'X-Accel-Buffering' => 'no', // Disable Nginx buffering
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Connection' => 'keep-alive',
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);
+        
+        // Remove Content-Length to allow streaming
+        $jsonResponse->headers->remove('Content-Length');
+        
+        return $jsonResponse;
     }
 
     /**
@@ -55,11 +64,20 @@ class BaseApiController extends Controller
             $response['data'] = $data;
         }
 
-        // Use JSON encoding with maximum performance options
-        return response()->json($response, $statusCode, [
+        // Use JSON encoding with maximum performance options and no buffering
+        $jsonResponse = response()->json($response, $statusCode, [
             'Content-Type' => 'application/json',
             'X-Content-Type-Options' => 'nosniff',
+            'X-Accel-Buffering' => 'no', // Disable Nginx buffering
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Connection' => 'keep-alive',
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);
+        
+        // Remove Content-Length to allow streaming
+        $jsonResponse->headers->remove('Content-Length');
+        
+        return $jsonResponse;
     }
 
     /**

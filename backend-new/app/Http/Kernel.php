@@ -18,6 +18,7 @@ class Kernel extends HttpKernel
         // \App\Http\Middleware\TrustProxies::class,
         // \Illuminate\Http\Middleware\HandleCors::class, // Disable built-in CORS middleware
         // \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
+        \App\Http\Middleware\DisableBuffering::class, // Disable all output buffering for instant responses
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         // \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,

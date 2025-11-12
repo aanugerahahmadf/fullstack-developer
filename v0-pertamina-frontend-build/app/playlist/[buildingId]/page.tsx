@@ -137,7 +137,10 @@ export default function BuildingRoomsPage() {
                     {room.cctvs ? room.cctvs.length : 0} CCTV
                   </span>
                   <Link href={`/playlist/${buildingId}/${room.id}`}>
-                    <button className="text-xs md:text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg transition">
+                    <button 
+                      className="text-xs md:text-sm bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-3 py-1 rounded-lg transition-all duration-75 active:scale-95"
+                      style={{ touchAction: 'manipulation' }}
+                    >
                       View CCTV
                     </button>
                   </Link>

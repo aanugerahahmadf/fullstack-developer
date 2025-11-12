@@ -43,16 +43,16 @@ class FrontendController extends Controller
         // Proxy the request to the Next.js frontend running on port 3000
         $url = "http://127.0.0.1:3000/" . ltrim($request->path(), '/');
 
-        // Create context for the request with maximum performance settings
+        // Create context for the request with maximum performance settings (no buffering)
         $contextOptions = [
             'http' => [
                 'method' => $request->method(),
                 'header' => $this->formatHeaders($request->headers->all()),
-                'timeout' => 30, // Reduced timeout for better responsiveness
+                'timeout' => 5, // Ultra-fast timeout for instant failure
                 'ignore_errors' => true,
                 'protocol_version' => 1.1,
-                'follow_location' => 1,
-                'max_redirects' => 3,
+                'follow_location' => 0, // Disable redirects for speed
+                'max_redirects' => 0,
             ]
         ];
 
@@ -130,9 +130,17 @@ class FrontendController extends Controller
             }
         }
 
-        // Add performance headers
+        // Add performance headers and disable buffering
         $laravelResponse->header('X-Proxy-Latency', '0');
         $laravelResponse->header('X-Content-Type-Options', 'nosniff');
+        $laravelResponse->header('X-Accel-Buffering', 'no'); // Disable Nginx buffering
+        $laravelResponse->header('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+        $laravelResponse->header('Pragma', 'no-cache');
+        $laravelResponse->header('Expires', '0');
+        $laravelResponse->header('Connection', 'keep-alive');
+        
+        // Remove Content-Length to allow streaming (no buffering)
+        $laravelResponse->headers->remove('Content-Length');
 
         return $laravelResponse;
     }

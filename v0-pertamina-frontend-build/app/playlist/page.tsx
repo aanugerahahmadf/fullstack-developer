@@ -181,7 +181,10 @@ export default function PlaylistPage() {
                     {building.roomCount} Room
                   </span>
                   <Link href={`/playlist/${building.ids[0]}`}>
-                    <button className="text-xs md:text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg transition">
+                    <button 
+                      className="text-xs md:text-sm bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-3 py-1 rounded-lg transition-all duration-75 active:scale-95"
+                      style={{ touchAction: 'manipulation' }}
+                    >
                       View Room
                     </button>
                   </Link>

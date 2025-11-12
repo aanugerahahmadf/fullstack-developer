@@ -135,6 +135,8 @@ npm start
    npm run dev
    ```
 
+> ⚠️ **Note on Turbopack Timeout Issues**: If you encounter "signal timed out" errors with Next.js 16.0.0, please refer to [TURBOPACK_TIMEOUT_FIX.md](TURBOPACK_TIMEOUT_FIX.md) for solutions.
+
 4. **Access the application**: http://localhost:8000
 
 ### Option 3: Production mode
@@ -163,7 +165,7 @@ npm start
 - **API Endpoints**: http://localhost:8000/api/*
 - **Streaming Server API**: http://localhost:3002/api/*
 - **HLS Streams**: http://localhost:8000/live/{cctv_id}/index.m3u8
-- **Direct Frontend Access**: http://localhost:3000 (development only)
+- **Direct Frontend Access**: http://localhost:3001 (development only)
 
 ## 🧪 Testing API Endpoints
 
@@ -206,6 +208,8 @@ You can test the API endpoints directly:
    npm run dev
    ```
 
+   > ⚠️ **Note**: The development server now runs on port 3001 instead of 3000 to avoid conflicts.
+
 2. **Backend Development**:
    ```bash
    cd backend-new
@@ -244,7 +248,7 @@ You can test the API endpoints directly:
 3. **Frontend not loading**:
    - Ensure both servers are running
    - Check Laravel logs: `backend-new/storage/logs/laravel.log`
-   - Verify Next.js server is accessible at http://localhost:3000
+   - Verify Next.js server is accessible at http://localhost:3001
 
 4. **API calls failing**:
    - Check CORS configuration
@@ -261,6 +265,11 @@ You can test the API endpoints directly:
    - Check if streams are being generated in `streaming-server/streams/`
    - Verify network connectivity to streaming server
    - Ensure browser supports HLS playback
+
+7. **Turbopack timeout errors**:
+   - If you encounter "signal timed out" errors, refer to [TURBOPACK_TIMEOUT_FIX.md](TURBOPACK_TIMEOUT_FIX.md)
+   - Try increasing system resources or using Webpack instead of Turbopack
+   - Clear the Next.js cache by deleting the `.next` folder
 
 ### Logs
 

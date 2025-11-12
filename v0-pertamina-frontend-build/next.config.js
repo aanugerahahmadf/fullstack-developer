@@ -74,4 +74,4 @@ const nextConfig = {
   // optimizeFonts: true,  // Removed as it's not recognized
 };
 
-export default nextConfig;
+module.exports = nextConfig;

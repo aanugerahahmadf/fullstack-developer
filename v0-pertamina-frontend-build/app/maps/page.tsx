@@ -155,6 +155,11 @@ export default function MapsPage() {
   }, [mounted])
   
   const handleBuildingClick = async (building: any) => {
+    // Show modal immediately for instant UI feedback (no delay)
+    setSelectedBuilding({ ...building, rooms: [] });
+    setShowRoomsModal(true);
+    
+    // Fetch data in background (non-blocking)
     try {
       // Fetch rooms for this building
       const buildingRooms = await getRoomsByBuilding(building.id)
@@ -176,32 +181,30 @@ export default function MapsPage() {
       // Optional: keep flat cache
       setCctvs(buildingRoomsWithCctvs.flatMap((r: any) => r.cctvs || []))
       
-      // Add rooms to the building object
-      const buildingWithRooms = { 
+      // Update building with rooms data
+      setSelectedBuilding({ 
         ...building, 
         rooms: buildingRoomsWithCctvs 
-      };
-      
-      // Set selected building and show rooms modal
-      setSelectedBuilding(buildingWithRooms);
-      setShowRoomsModal(true);
+      });
     } catch (error) {
       console.error('Failed to process building data:', error);
-      // Still set the building as selected even if room processing fails
-      setSelectedBuilding({ ...building, rooms: [] });
-      setShowRoomsModal(true);
+      // Keep modal open even if data fetch fails
     }
   };
   
   const handleLiveStream = useCallback(async (cctv: any) => {
+    // Show modal immediately for instant UI feedback (no delay)
+    setSelectedCctv(cctv)
+    setShowLiveStream(true)
+    setStreamData(null) // Reset stream data
+    
+    // Fetch stream URL in background (non-blocking)
     try {
-      setSelectedCctv(cctv)
-      setShowLiveStream(true)
-      // Fetch stream URL
       const streamData = await getCctvStreamUrl(cctv.id)
       setStreamData(streamData)
     } catch (error) {
       console.error('Failed to fetch stream URL:', error)
+      setStreamData({ stream_url: null }) // Set error state
     }
   }, [])
   
@@ -332,7 +335,8 @@ export default function MapsPage() {
                       <h3 className="font-black text-xl text-black mb-2 drop-shadow-md text-center">{building.name || 'Unnamed Building'}</h3>
                       <button
                         onClick={() => handleBuildingClick(building)}
-                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-semibold py-2 px-3 rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.02]"
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 active:from-blue-800 active:to-blue-900 text-white text-sm font-semibold py-2 px-3 rounded-lg shadow-md transition-all duration-75 active:scale-95"
+                        style={{ touchAction: 'manipulation' }}
                       >
                         View Room
                       </button>
@@ -364,7 +368,8 @@ export default function MapsPage() {
               </h2>
               <button 
                 onClick={() => setShowLiveStream(false)} 
-                className="text-white hover:text-white transition p-1"
+                className="text-white hover:text-white active:opacity-70 transition-all duration-75 p-1"
+                style={{ touchAction: 'manipulation' }}
                 aria-label="Close"
               >
                 <span className="text-2xl font-light">×</span>
@@ -414,7 +419,8 @@ export default function MapsPage() {
               <div className="flex gap-2">
                 <button 
                   onClick={handleFullscreen}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-sm"
+                  className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 active:from-green-800 active:to-green-900 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-75 shadow-md hover:shadow-lg active:scale-95 text-sm"
+                  style={{ touchAction: 'manipulation' }}
                 >
                   Full Screen
                 </button>

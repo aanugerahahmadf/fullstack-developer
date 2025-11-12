@@ -43,6 +43,11 @@ class PerformanceMonitor
 
         // Even in production, add minimal performance headers for client-side optimization
         $response->headers->set('X-Response-Time', 'ultra-fast');
+        
+        // Ensure no buffering
+        $response->headers->set('X-Accel-Buffering', 'no');
+        $response->headers->remove('Content-Length');
+        
         return $response;
     }
 }

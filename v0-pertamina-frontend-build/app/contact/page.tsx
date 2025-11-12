@@ -120,8 +120,9 @@ export default function ContactPage() {
                 {/* Email Card */}
                 {contact.email && (
                   <div 
-                    className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[120px] md:min-h-[140px] cursor-pointer hover:bg-white/20 transition-all duration-200 flex items-center justify-center shadow-lg"
+                    className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[120px] md:min-h-[140px] cursor-pointer hover:bg-white/20 active:bg-white/25 active:scale-95 transition-all duration-75 flex items-center justify-center shadow-lg"
                     onClick={() => handleEmailClick(contact.email)}
+                    style={{ touchAction: 'manipulation' }}
                   >
                     <div className="flex flex-col items-center justify-center text-center">
                       {icons.Mail && <icons.Mail className="w-10 h-10 text-blue-400 mb-3" />}
@@ -136,8 +137,9 @@ export default function ContactPage() {
                 {/* Phone Card */}
                 {contact.phone && (
                   <div 
-                    className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[120px] md:min-h-[140px] cursor-pointer hover:bg-white/20 transition-all duration-200 flex items-center justify-center shadow-lg"
+                    className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[120px] md:min-h-[140px] cursor-pointer hover:bg-white/20 active:bg-white/25 active:scale-95 transition-all duration-75 flex items-center justify-center shadow-lg"
                     onClick={() => handlePhoneClick(contact.phone)}
+                    style={{ touchAction: 'manipulation' }}
                   >
                     <div className="flex flex-col items-center justify-center text-center">
                       {icons.Phone && <icons.Phone className="w-10 h-10 text-green-400 mb-3" />}
@@ -152,8 +154,9 @@ export default function ContactPage() {
                 {/* Instagram Card */}
                 {contact.instagram && (
                   <div 
-                    className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[120px] md:min-h-[140px] cursor-pointer hover:bg-white/20 transition-all duration-200 flex items-center justify-center shadow-lg"
+                    className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[120px] md:min-h-[140px] cursor-pointer hover:bg-white/20 active:bg-white/25 active:scale-95 transition-all duration-75 flex items-center justify-center shadow-lg"
                     onClick={() => handleInstagramClick(contact.instagram)}
+                    style={{ touchAction: 'manipulation' }}
                   >
                     <div className="flex flex-col items-center justify-center text-center">
                       {icons.Instagram && <icons.Instagram className="w-10 h-10 text-pink-400 mb-3" />}
@@ -172,8 +175,9 @@ export default function ContactPage() {
               contact.address && (
                 <div 
                   key={`address-${contact.id}`} 
-                  className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[160px] md:min-h-[275px] col-span-1 md:col-span-2 lg:col-span-3 cursor-pointer hover:bg-white/20 transition-all duration-200 flex items-center justify-center shadow-lg"
+                  className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[160px] md:min-h-[275px] col-span-1 md:col-span-2 lg:col-span-3 cursor-pointer hover:bg-white/20 active:bg-white/25 active:scale-95 transition-all duration-75 flex items-center justify-center shadow-lg"
                   onClick={() => handleAddressClick(contact.address)}
+                  style={{ touchAction: 'manipulation' }}
                 >
                   <div className="flex flex-col items-center justify-center text-center">
                     {icons.MapPin && <icons.MapPin className="w-10 h-10 text-red-400 mb-3" />}
