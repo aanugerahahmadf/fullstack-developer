@@ -7,8 +7,10 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "codeat3/blade-elusive-icons": "^1.5",
         "codeat3/blade-govicons": "^1.5",
         "filament/filament": "4.0",
+        "joaopaulolndev/filament-edit-profile": "*",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",

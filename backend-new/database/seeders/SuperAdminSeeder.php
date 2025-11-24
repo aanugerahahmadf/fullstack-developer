@@ -29,6 +29,7 @@ class SuperAdminSeeder extends Seeder
         // Create or update the super admin user
         $userData = [
             'name' => 'Super Admin',
+            'username' => 'superadmin',
             'email' => 'admin@pertamina.com',
             'password' => Hash::make('admin123'),
             'email_verified_at' => now(),

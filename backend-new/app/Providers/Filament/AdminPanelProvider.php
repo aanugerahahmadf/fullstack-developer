@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use Filament\Navigation\MenuItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Pages\Dashboard;
@@ -10,6 +11,7 @@ use Filament\Widgets\AccountWidget;
 use Filament\Navigation\NavigationGroup;
 use Filament\Widgets\FilamentInfoWidget;
 use Filament\Http\Middleware\Authenticate;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -19,6 +21,10 @@ use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use App\Filament\Pages\Auth\Login;
+use App\Livewire\UsernameComponent;
+use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
+use Joaopaulolndev\FilamentEditProfile\Pages\EditProfilePage;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -28,10 +34,10 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
-            //->brandName('Kilang Pertamina Internasional')
-            ->brandLogo(asset('images/logo-pertamina.png'))
-            ->brandLogoHeight('8rem')
+            ->login(Login::class)
+            ->brandName('Kilang Pertamina Internasional')
+            //->brandLogo(asset('images/logo-pertamina.png'))
+            ->brandLogoHeight('7rem')
             ->colors([
                 'primary' => Color::Red,
             ])
@@ -55,7 +61,10 @@ class AdminPanelProvider extends PanelProvider
                     ->label('Contact Us')
                     ->icon('bxs-message-detail')
                     ->collapsed(),
-             ])
+                NavigationGroup::make()
+                    ->label('Account')
+                    ->icon('bxs-user-account'),
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -71,6 +80,30 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->databaseNotifications()
-            ->databaseNotificationsPolling('30s');
+            ->databaseNotificationsPolling('30s')
+            ->plugin(
+                FilamentEditProfilePlugin::make()
+                    ->setTitle('Profile')
+                    ->setNavigationLabel('Profile')
+                    ->setNavigationGroup('Account')
+                    ->setSort(10)
+                    ->shouldShowAvatarForm(
+                        value: true,
+                        directory: 'avatars', // image will be stored in 'storage/app/public/avatars
+                        rules: 'mimes:jpeg,png|max:51200' // only accept jpeg and png files with a maximum size of 50MB (51200 KB)
+                    )
+                    ->customProfileComponents([
+                        UsernameComponent::class,
+                    ])
+            )
+            ->userMenuItems([
+                'profile' => MenuItem::make()
+                    ->label(fn (): string => Auth::user()?->name ?? 'Profile')
+                    ->url(fn (): string => EditProfilePage::getUrl())
+                    ->icon('elusive-adjust-alt')
+                    ->visible(function (): bool {
+                        return Auth::check();
+                    }),
+            ]);
     }
 }

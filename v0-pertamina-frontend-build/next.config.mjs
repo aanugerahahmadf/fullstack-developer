@@ -1,18 +1,21 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  outputFileTracingRoot: __dirname,
   reactStrictMode: false,
-  // Use Turbopack for better performance
+  // Use webpack for better compatibility
   experimental: {
     optimizeCss: true,
     // Enable faster page loading
     optimizeServerReact: true,
   },
   serverExternalPackages: [],
-  // Enhanced turbopack config for better HMR stability
-  turbopack: {
-    resolveExtensions: ['.ts', '.tsx', '.js', '.jsx', '.json', '.mjs'],
-  },
   // Add transpilePackages to handle lucide-react properly
   transpilePackages: ['lucide-react'],
   // Configure image optimization
@@ -32,16 +35,9 @@ const nextConfig = {
       },
     ],
   },
-  // Add webpack configuration to handle HMR issues
+  // Add webpack configuration if needed
   webpack: (config, { isServer }) => {
-    // Handle HMR issues with lucide-react
-    if (!isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        'lucide-react': 'lucide-react/dist/esm/index.js',
-      };
-    }
-    
+    // Webpack config can be extended here if needed
     return config;
   },
   // Add performance optimizations
