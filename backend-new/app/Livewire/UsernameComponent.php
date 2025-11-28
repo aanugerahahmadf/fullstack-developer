@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Component as SchemaComponent;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -13,6 +15,7 @@ use Livewire\Component;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Models\User;
 use Joaopaulolndev\FilamentEditProfile\Concerns\HasSort;
 
 class UsernameComponent extends Component implements HasSchemas
@@ -63,15 +66,38 @@ class UsernameComponent extends Component implements HasSchemas
             
             Log::info('UsernameComponent: Saving username', ['data' => $data]);
             
+            /** @var User $user */
             $user = Auth::user();
+            
+            if (!$user) {
+                throw new \Exception('User not authenticated');
+            }
+            
             $user->username = $data['username'];
             $user->save();
             
+            // Refresh user instance to get updated data
+            $user = $user->fresh();
+            
             Log::info('UsernameComponent: Username saved successfully', ['user_id' => $user->id, 'username' => $user->username]);
+            
+            // Show success notification
+            Notification::make()
+                ->title('Username updated successfully!')
+                ->success()
+                ->send();
             
             $this->dispatch('profile-updated');
         } catch (\Exception $e) {
             Log::error('UsernameComponent: Error saving username', ['error' => $e->getMessage()]);
+            
+            // Show error notification
+            Notification::make()
+                ->title('Failed to update username')
+                ->body('An error occurred while updating your username. Please try again.')
+                ->danger()
+                ->send();
+                
             throw $e;
         }
     }

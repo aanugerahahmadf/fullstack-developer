@@ -21,6 +21,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use UnitEnum;
 use Illuminate\Support\Facades\DB;
+use Filament\Notifications\Notification;
 
 class BuildingResource extends Resource
 {
@@ -95,7 +96,13 @@ class BuildingResource extends Resource
             ])
             ->headerActions([
                 CreateAction::make()
-                    ->label('Create Building'),
+                    ->label('Create Building')
+                    ->successNotification(
+                        Notification::make()
+                            ->success()
+                            ->title('Building created')
+                            ->body('The building has been created successfully.')
+                    ),
                 ExportAction::make()
                     ->exporter(BuildingExporter::class)
                     ->label('Export Building'),
@@ -109,15 +116,33 @@ class BuildingResource extends Resource
                 EditAction::make()
                     ->button()
                     ->color('warning')
-                    ->size('lg'),
+                    ->size('lg')
+                    ->successNotification(
+                        Notification::make()
+                            ->success()
+                            ->title('Building updated')
+                            ->body('The building has been updated successfully.')
+                    ),
                 DeleteAction::make()
                     ->button()
                     ->color('danger')
-                    ->size('lg'),
+                    ->size('lg')
+                    ->successNotification(
+                        Notification::make()
+                            ->success()
+                            ->title('Building deleted')
+                            ->body('The building has been deleted successfully.')
+                    ),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->successNotification(
+                            Notification::make()
+                                ->success()
+                                ->title('Buildings deleted')
+                                ->body('The selected buildings have been deleted successfully.')
+                        ),
                 ]),
             ]);
     }

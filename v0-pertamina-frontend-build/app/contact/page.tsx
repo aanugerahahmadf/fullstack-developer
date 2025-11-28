@@ -172,7 +172,7 @@ export default function ContactPage() {
               contact.address && (
                 <div 
                   key={`address-${contact.id}`} 
-                  className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[160px] md:min-h-[275px] col-span-1 md:col-span-2 lg:col-span-3 cursor-pointer hover:bg-white/20 transition-all duration-200 flex items-center justify-center shadow-lg"
+                  className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 min-h-[200px] md:min-h-[300px] col-span-1 md:col-span-2 lg:col-span-3 cursor-pointer hover:bg-white/20 transition-all duration-200 flex items-center justify-center shadow-lg"
                   onClick={() => handleAddressClick(contact.address)}
                 >
                   <div className="flex flex-col items-center justify-center text-center">

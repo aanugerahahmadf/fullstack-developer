@@ -21,6 +21,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use App\Filament\Resources\Contacts\Pages\ManageContacts;
+use Filament\Notifications\Notification;
 
 class ContactResource extends Resource
 {
@@ -85,7 +86,13 @@ class ContactResource extends Resource
             ])
             ->headerActions([
                 CreateAction::make()
-                    ->label('Create Contact'),
+                    ->label('Create Contact')
+                    ->successNotification(
+                        Notification::make()
+                            ->success()
+                            ->title('Contact created')
+                            ->body('The contact has been created successfully.')
+                    ),
                 ExportAction::make()
                     ->exporter(ContactExporter::class)
                     ->label('Export Contact'),
@@ -98,15 +105,33 @@ class ContactResource extends Resource
                 EditAction::make()
                     ->button()
                     ->color('warning')
-                    ->size('lg'),
+                    ->size('lg')
+                    ->successNotification(
+                        Notification::make()
+                            ->success()
+                            ->title('Contact updated')
+                            ->body('The contact has been updated successfully.')
+                    ),
                 DeleteAction::make()
                     ->button()
                     ->color('danger')
-                    ->size('lg'),
+                    ->size('lg')
+                    ->successNotification(
+                        Notification::make()
+                            ->success()
+                            ->title('Contact deleted')
+                            ->body('The contact has been deleted successfully.')
+                    ),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->successNotification(
+                            Notification::make()
+                                ->success()
+                                ->title('Contacts deleted')
+                                ->body('The selected contacts have been deleted successfully.')
+                        ),
                 ]),
             ]);
     }

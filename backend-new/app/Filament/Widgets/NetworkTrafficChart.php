@@ -24,6 +24,8 @@ class NetworkTrafficChart extends ChartWidget
                         'borderColor' => '#3B82F6',
                         'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
                         'fill' => true,
+                        'tension' => 0.4,
+                        'pointRadius' => 3,
                     ],
                     [
                         'label' => 'Outgoing Traffic (Mbps)',
@@ -31,6 +33,8 @@ class NetworkTrafficChart extends ChartWidget
                         'borderColor' => '#10B981',
                         'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
                         'fill' => true,
+                        'tension' => 0.4,
+                        'pointRadius' => 3,
                     ],
                 ],
                 'labels' => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -42,18 +46,24 @@ class NetworkTrafficChart extends ChartWidget
         $baseIncoming = $totalCctvs * 2;
         $baseOutgoing = $totalCctvs * 0.5; // Less outgoing traffic
 
-        // Generate weekly data with realistic variations
+        // Generate weekly data with realistic variations and smooth waves
         $incomingData = [];
         $outgoingData = [];
         $labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+        // Create smooth wave patterns using sine functions for more natural-looking curves
         for ($i = 0; $i < 7; $i++) {
-            // Add variation (±20%)
-            $incomingVariation = $baseIncoming * (rand(-20, 20) / 100);
-            $outgoingVariation = $baseOutgoing * (rand(-20, 20) / 100);
-
-            $incomingData[] = max(0, $baseIncoming + $incomingVariation);
-            $outgoingData[] = max(0, $baseOutgoing + $outgoingVariation);
+            // Create wave patterns with different frequencies and phases
+            $incomingWave = sin($i * 0.8) * ($baseIncoming * 0.15); // 15% variation
+            $outgoingWave = sin($i * 1.2 + 1.5) * ($baseOutgoing * 0.2); // 20% variation with phase shift
+            
+            // Add random variation on top of wave patterns
+            $incomingVariation = $baseIncoming * (rand(-10, 10) / 100);
+            $outgoingVariation = $baseOutgoing * (rand(-10, 10) / 100);
+            
+            // Combine wave patterns with random variations
+            $incomingData[] = max(0, $baseIncoming + $incomingWave + $incomingVariation);
+            $outgoingData[] = max(0, $baseOutgoing + $outgoingWave + $outgoingVariation);
         }
 
         return [
@@ -64,6 +74,8 @@ class NetworkTrafficChart extends ChartWidget
                     'borderColor' => '#3B82F6',
                     'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
                     'fill' => true,
+                    'tension' => 0.4, // Smooth curves
+                    'pointRadius' => 3,
                 ],
                 [
                     'label' => 'Outgoing Traffic (Mbps)',
@@ -71,6 +83,8 @@ class NetworkTrafficChart extends ChartWidget
                     'borderColor' => '#10B981',
                     'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
                     'fill' => true,
+                    'tension' => 0.4, // Smooth curves
+                    'pointRadius' => 3,
                 ],
             ],
             'labels' => $labels,

@@ -23,6 +23,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use App\Filament\Resources\Cctvs\Pages\ManageCctvs;
 use Filament\Actions\CreateAction;
+use Filament\Notifications\Notification;
 
 class CctvResource extends Resource
 {
@@ -121,7 +122,13 @@ class CctvResource extends Resource
             ])
             ->headerActions([
                 CreateAction::make()
-                    ->label('Create Cctv'),
+                    ->label('Create Cctv')
+                    ->successNotification(
+                        Notification::make()
+                            ->success()
+                            ->title('CCTV created')
+                            ->body('The CCTV has been created successfully.')
+                    ),
                 ExportAction::make()
                     ->exporter(CctvExporter::class)
                     ->label('Export Cctv'),
@@ -134,15 +141,33 @@ class CctvResource extends Resource
                 EditAction::make()
                     ->button()
                     ->color('warning')
-                    ->size('lg'),
+                    ->size('lg')
+                    ->successNotification(
+                        Notification::make()
+                            ->success()
+                            ->title('CCTV updated')
+                            ->body('The CCTV has been updated successfully.')
+                    ),
                 DeleteAction::make()
                     ->button()
                     ->color('danger')
-                    ->size('lg'),
+                    ->size('lg')
+                    ->successNotification(
+                        Notification::make()
+                            ->success()
+                            ->title('CCTV deleted')
+                            ->body('The CCTV has been deleted successfully.')
+                    ),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->successNotification(
+                            Notification::make()
+                                ->success()
+                                ->title('CCTVs deleted')
+                                ->body('The selected CCTVs have been deleted successfully.')
+                        ),
                 ]),
             ]);
     }
