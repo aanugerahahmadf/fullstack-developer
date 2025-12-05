@@ -3,9 +3,11 @@
 namespace App\Providers\Filament;
 
 use Filament\Navigation\MenuItem;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Pages\Dashboard;
+use Filament\Support\Assets\Css;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
 use Filament\Navigation\NavigationGroup;
@@ -36,8 +38,12 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login(Login::class)
             ->brandName('Kilang Pertamina Internasional')
-            //->brandLogo(asset('images/logo-pertamina.png'))
-            ->brandLogoHeight('7rem')
+            ->brandLogo(fn () => view('vendor.filament.components.sidebar.brand'))
+            ->darkModeBrandLogo(fn () => view('vendor.filament.components.sidebar.brand-dark'))
+            ->assets([
+                new Css('custom-filament-css', resource_path('css/filament.css')),
+            ])
+            ->topbar(true)
             ->colors([
                 'primary' => Color::Red,
             ])
@@ -50,20 +56,31 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
 
             ])
-            ->sidebarCollapsibleOnDesktop()
-            //->sidebarWidth('16rem')
+            //->sidebarFullyCollapsibleOnDesktop()
+            ->topNavigation()
             ->navigationGroups([
+                // NavigationGroup::make()
+                //     ->label('Dashboard'),
+                    // ->collapsed(),
                 NavigationGroup::make()
-                    ->label('Playlist And Maps')
-                    ->icon('bxs-map-pin')
-                    ->collapsed(),
+                    ->label('Roles User'),
+                    // ->collapsed(),
+                    // ->icon('zondicon-shield'),
+                // NavigationGroup::make()
+                //     ->label('User')
+                //     ->icon('bxs-user-account')
+                //     ->collapsed(),
                 NavigationGroup::make()
-                    ->label('Contact Us')
-                    ->icon('bxs-message-detail')
-                    ->collapsed(),
-                NavigationGroup::make()
-                    ->label('Account')
-                    ->icon('bxs-user-account'),
+                    ->label('Web'),
+                    // ->collapsed(),
+                    // ->icon('bxs-map-pin')
+                // NavigationGroup::make()
+                //     ->label('Contact Us')
+                //     ->icon('bxs-message-detail')
+                //     ->collapsed(),
+                // NavigationGroup::make()
+                //     ->label('Account'),
+                //     ->collapsed()
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -76,6 +93,22 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            ->plugins([
+                // Use a custom plugin that doesn't register the default RoleResource
+                new class extends FilamentShieldPlugin {
+                    public function register(Panel $panel): void
+                    {
+                        // Don't register the default RoleResource
+                        // Our custom RoleResource will be discovered automatically
+                    }
+                    
+                    public function boot(Panel $panel): void
+                    {
+                        // Set the navigation group for the plugin
+                        $this->navigationGroup('Filament Shield');
+                    }
+                }
+            ])
             ->authMiddleware([
                 Authenticate::class,
             ])
@@ -85,7 +118,8 @@ class AdminPanelProvider extends PanelProvider
                 FilamentEditProfilePlugin::make()
                     ->setTitle('Profile')
                     ->setNavigationLabel('Profile')
-                    ->setNavigationGroup('Account')
+                    ->shouldRegisterNavigation(false) // Hide from navigation
+                    ->setIcon('bxs-user-account')
                     ->setSort(10)
                     ->shouldShowAvatarForm(
                         value: true,
@@ -100,7 +134,7 @@ class AdminPanelProvider extends PanelProvider
                 'profile' => MenuItem::make()
                     ->label(fn (): string => Auth::user()?->name ?? 'Profile')
                     ->url(fn (): string => EditProfilePage::getUrl())
-                    ->icon('elusive-adjust-alt')
+                    ->icon('eos-account-circle')
                     ->visible(function (): bool {
                         return Auth::check();
                     }),

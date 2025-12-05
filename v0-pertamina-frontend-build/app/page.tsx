@@ -57,12 +57,25 @@ interface ProductionTrend {
   date: string
   production: number
   target: number
+  traffic_volume?: number
+  average_speed?: number
+  incidents?: number
+  congestion_index?: number
+  signal_changes?: number
+  green_wave_efficiency?: number
 }
 
 interface UnitPerformance {
   unit: string
   efficiency: number
   capacity: number
+  traffic_density?: number
+  signal_optimization?: number
+  average_delay?: number
+  queue_length?: number
+  green_wave_ratio?: number
+  incident_rate?: number
+  adaptive_control?: number
 }
 
 interface DateRange {
@@ -85,29 +98,16 @@ export default function Home() {
   const [chartLoading, setChartLoading] = useState(true);
   const [dateRange, setDateRange] = useState<{start: string, end: string}>(() => {
     const now = new Date();
-    // Prevent defaulting to November 2025 or October 2025
-    let year = now.getFullYear();
-    let month = now.getMonth();
-    
-    // Skip November 2025
-    if (year === 2025 && month === 10) { // November is month 10 (0-indexed)
-      // Move to December 2025 instead
-      month = 11; // December
-    }
-    
-    // Skip October 2025
-    if (year === 2025 && month === 9) { // October is month 9 (0-indexed)
-      // Move to September 2025 instead
-      month = 8; // September
-    }
-    
-    const start = new Date(year, month, 1); // First day of current month
-    const end = new Date(year, month + 1, 0); // Last day of current month
+    const start = new Date(now.getFullYear(), now.getMonth(), 1); // First day of current month
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Last day of current month
     return {
       start: start.toISOString().split('T')[0],
       end: end.toISOString().split('T')[0]
     };
   });
+  
+  // State to track if we've initialized the date range based on actual data
+  const [isDateRangeInitialized, setIsDateRangeInitialized] = useState(false);
   
   // State for dynamically imported icons
   const [icons, setIcons] = useState<any>({});
@@ -158,22 +158,8 @@ export default function Home() {
   // Function to get date range for current month
   const getCurrentMonthDateRange = useCallback(() => {
     const now = new Date();
-    // Skip November 2025 and October 2025
-    let year = now.getFullYear();
-    let month = now.getMonth();
-    
-    if (year === 2025 && month === 10) { // November is month 10 (0-indexed)
-      // Move to December 2025 instead
-      month = 11; // December
-    }
-    
-    if (year === 2025 && month === 9) { // October is month 9 (0-indexed)
-      // Move to September 2025 instead
-      month = 8; // September
-    }
-    
-    const start = new Date(year, month, 1);
-    const end = new Date(year, month + 1, 0);
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     return {
       start: start.toISOString().split('T')[0],
       end: end.toISOString().split('T')[0]
@@ -181,10 +167,13 @@ export default function Home() {
   }, []);
 
   // Enhanced load data function with system status checking
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (overrideDateRange?: {start: string, end: string}) => {
     try {
       setLoading(true);
       setChartLoading(true);
+
+      // Use provided date range or default to current state
+      const effectiveDateRange = overrideDateRange || dateRange;
 
       // Fetch all data in parallel for maximum performance
       console.log('Fetching stats...');
@@ -206,25 +195,49 @@ export default function Home() {
       console.log('Fetching production trends...');
       let productionData: ProductionTrend[] = [];
       try {
-        productionData = await getProductionTrends(dateRange.start, dateRange.end);
+        productionData = await getProductionTrends(effectiveDateRange.start, effectiveDateRange.end);
         console.log('Production trends data:', productionData);
+        
+        // If we haven't initialized the date range yet, try to set it based on actual data
+        if (!isDateRangeInitialized) {
+          try {
+            // Fetch all production trends to determine the appropriate date range
+            const allProductionData = await getProductionTrends();
+            if (allProductionData && allProductionData.length > 0) {
+              // Find the earliest and latest dates in the data
+              const dates = allProductionData.map(item => new Date(item.date));
+              const minDate = new Date(Math.min(...dates as any));
+              const maxDate = new Date(Math.max(...dates as any));
+              
+              // Set date range to cover the month of the most recent data
+              const displayDate = maxDate;
+              const newStart = new Date(displayDate.getFullYear(), displayDate.getMonth(), 1);
+              const newEnd = new Date(displayDate.getFullYear(), displayDate.getMonth() + 1, 0);
+              
+              const newDateRange = {
+                start: newStart.toISOString().split('T')[0],
+                end: newEnd.toISOString().split('T')[0]
+              };
+              
+              setDateRange(newDateRange);
+              setIsDateRangeInitialized(true);
+              
+              // Re-fetch data with the new date range
+              productionData = await getProductionTrends(newDateRange.start, newDateRange.end);
+            } else {
+              // If no data, mark as initialized to prevent infinite loop
+              setIsDateRangeInitialized(true);
+            }
+          } catch (rangeError) {
+            console.warn('Could not initialize date range from data:', rangeError);
+            setIsDateRangeInitialized(true);
+          }
+        }
       } catch (error) {
         handleApiError(error, 'Production Trends');
-        console.error('Failed to fetch production trends, using mock data:', error);
-        // Generate mock data when API fails
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const monthName = today.toLocaleDateString('en-US', { month: 'long' });
-        productionData = [
-          { date: `${year}-${month}-01`, production: 1200, target: 1500 },
-          { date: `${year}-${month}-05`, production: 1400, target: 1500 },
-          { date: `${year}-${month}-10`, production: 1100, target: 1500 },
-          { date: `${year}-${month}-15`, production: 1600, target: 1500 },
-          { date: `${year}-${month}-20`, production: 1300, target: 1500 },
-          { date: `${year}-${month}-25`, production: 1550, target: 1500 },
-          { date: `${year}-${month}-30`, production: 1450, target: 1500 },
-        ];
+        console.error('Failed to fetch production trends:', error);
+        // Return empty array when API fails
+        productionData = [];
       }
       
       console.log('Fetching unit performance...');
@@ -234,15 +247,9 @@ export default function Home() {
         console.log('Unit performance data:', unitPerformanceData);
       } catch (error) {
         handleApiError(error, 'Unit Performance');
-        console.error('Failed to fetch unit performance, using mock data:', error);
-        // Generate mock data when API fails
-        unitPerformanceData = [
-          { unit: 'Unit A', efficiency: 85, capacity: 1000 },
-          { unit: 'Unit B', efficiency: 92, capacity: 1200 },
-          { unit: 'Unit C', efficiency: 78, capacity: 800 },
-          { unit: 'Unit D', efficiency: 95, capacity: 1500 },
-          { unit: 'Unit E', efficiency: 88, capacity: 1100 },
-        ];
+        console.error('Failed to fetch unit performance:', error);
+        // Return empty array when API fails
+        unitPerformanceData = [];
       }
 
       // Update stats from backend so it matches Filament v4 exactly
@@ -268,9 +275,12 @@ export default function Home() {
       setUnitPerformance([]);
     } finally {
       setLoading(false);
-      setChartLoading(false);
+      // Use setTimeout to ensure state updates are processed
+      setTimeout(() => {
+        setChartLoading(false);
+      }, 0);
     }
-  }, [dateRange]);
+  }, [dateRange, isDateRangeInitialized]);
 
   // Load data immediately on component mount
   useEffect(() => {
@@ -298,24 +308,35 @@ export default function Home() {
       clearInterval(intervalId);
     };
   }, []);
-
-  // Handle date range changes
+  
+  // Trigger date range initialization on mount
   useEffect(() => {
-    let isMounted = true;
-    
-    const loadDataWrapper = async () => {
-      if (isMounted) {
-        await loadData();
-      }
-    };
-    
-    loadDataWrapper();
-    
-    // Cleanup function to prevent state updates on unmounted component
-    return () => {
-      isMounted = false;
-    };
-  }, [dateRange, loadData]);
+    // This will trigger the date range initialization logic in loadData
+    if (!isDateRangeInitialized) {
+      loadData();
+    }
+  }, [isDateRangeInitialized, loadData]);
+
+  // Handle date range changes (but not during initialization)
+  useEffect(() => {
+    // Only load data when date range changes after initialization
+    if (isDateRangeInitialized) {
+      let isMounted = true;
+      
+      const loadDataWrapper = async () => {
+        if (isMounted) {
+          await loadData();
+        }
+      };
+      
+      loadDataWrapper();
+      
+      // Cleanup function to prevent state updates on unmounted component
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [dateRange, loadData, isDateRangeInitialized]);
 
   // Manual refresh function
   const handleRefresh = () => {
@@ -389,7 +410,7 @@ export default function Home() {
           <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold text-white text-center w-full">
-                Production Trends - {(() => {
+                Production Trend - {(() => {
                   try {
                     const displayDate = new Date(dateRange.start);
                     return displayDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -425,7 +446,7 @@ export default function Home() {
                     <YAxis 
                       stroke="#ffffff80" 
                       tick={{ fill: '#ffffff80' }}
-                      domain={['dataMin - 100', 'dataMax + 100']}
+                      domain={[0, 'dataMax + 10']}
                     />
                     <Tooltip 
                       contentStyle={{ 
@@ -434,33 +455,98 @@ export default function Home() {
                         borderRadius: '0.5rem',
                         color: 'white'
                       }} 
-                      formatter={(value) => [value, 'Units']}
+                      formatter={(value, name) => {
+                        const nameStr = String(name);
+                        if (nameStr === 'traffic_volume') {
+                          return [value.toLocaleString(), 'Vehicles'];
+                        } else if (nameStr === 'average_speed') {
+                          return [`${value} km/h`, 'Avg Speed'];
+                        } else if (nameStr === 'incidents') {
+                          return [value, 'Incidents'];
+                        } else if (nameStr === 'congestion_index') {
+                          return [`${value}%`, 'Congestion'];
+                        } else if (nameStr === 'signal_changes') {
+                          return [value, 'Signal Changes'];
+                        } else if (nameStr === 'green_wave_efficiency') {
+                          return [`${value}%`, 'Green Wave'];
+                        } else {
+                          return [value, 'Units']
+                        }
+                      }}
                       labelStyle={{ color: '#ffffff' }}
                     />
                     <Legend />
                     <Line
-                      type="natural"
-                      dataKey="production"
-                      stroke="#3b82f6"
-                      activeDot={{ r: 8, fill: '#3b82f6' }}
-                      strokeWidth={3}
-                      name="Actual Production"
-                      animationDuration={700}
-                      animationEasing="ease-out"
-                      isAnimationActive={true}
-                      dot={{ stroke: '#3b82f6', strokeWidth: 2, r: 4, fill: '#3b82f6' }}
-                    />
-                    <Line
-                      type="natural"
-                      dataKey="target"
+                      type="monotone"
+                      dataKey="traffic_volume"
                       stroke="#10b981"
                       strokeWidth={3}
-                      name="Target Production"
-                      animationDuration={700}
+                      name="Traffic Volume"
+                      animationDuration={800}
                       animationEasing="ease-out"
                       isAnimationActive={true}
-                      strokeDasharray="5 5"
-                      dot={{ stroke: '#10b981', strokeWidth: 2, r: 4, fill: '#10b981' }}
+                      dot={false}
+                      activeDot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="average_speed"
+                      stroke="#3b82f6"
+                      strokeWidth={3}
+                      name="Avg Speed (km/h)"
+                      animationDuration={1200}
+                      animationEasing="ease-out"
+                      isAnimationActive={true}
+                      dot={false}
+                      activeDot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="congestion_index"
+                      stroke="#f59e0b"
+                      strokeWidth={3}
+                      name="Congestion Index"
+                      animationDuration={1000}
+                      animationEasing="ease-out"
+                      isAnimationActive={true}
+                      dot={false}
+                      activeDot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="incidents"
+                      stroke="#ef4444"
+                      strokeWidth={3}
+                      name="Incidents"
+                      animationDuration={900}
+                      animationEasing="ease-out"
+                      isAnimationActive={true}
+                      dot={false}
+                      activeDot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="signal_changes"
+                      stroke="#8b5cf6"
+                      strokeWidth={3}
+                      name="Signal Changes"
+                      animationDuration={1100}
+                      animationEasing="ease-out"
+                      isAnimationActive={true}
+                      dot={false}
+                      activeDot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="green_wave_efficiency"
+                      stroke="#ec4899"
+                      strokeWidth={3}
+                      name="Green Wave Efficiency"
+                      animationDuration={1300}
+                      animationEasing="ease-out"
+                      isAnimationActive={true}
+                      dot={false}
+                      activeDot={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -482,7 +568,7 @@ export default function Home() {
                 </div>
               ) : unitPerformance && unitPerformance.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
+                  <LineChart
                     data={unitPerformance}
                     margin={{
                       top: 20,
@@ -503,8 +589,8 @@ export default function Home() {
                     <YAxis 
                       stroke="#ffffff80" 
                       tick={{ fill: '#ffffff80' }}
-                      domain={[0, 'dataMax + 100']}
-                      tickFormatter={(value) => value.toLocaleString()}
+                      domain={[0, 'dataMax + 10']}
+                      tickFormatter={(value) => `${value}%`}
                     />
                     <Tooltip 
                       contentStyle={{ 
@@ -513,7 +599,19 @@ export default function Home() {
                         borderRadius: '0.5rem',
                         color: 'white'
                       }} 
-                      formatter={(value) => [value.toLocaleString(), 'Units']}
+                      formatter={(value, name) => {
+                        // Format tooltip based on metric type
+                        const nameStr = String(name);
+                        if (nameStr === 'average_delay') {
+                          return [`${value} seconds`, 'Avg Delay'];
+                        } else if (nameStr === 'queue_length') {
+                          return [`${value} vehicles`, 'Queue Length'];
+                        } else if (nameStr === 'incident_rate') {
+                          return [`${value} incidents/hr`, 'Incident Rate'];
+                        } else {
+                          return [`${value}%`, nameStr.replace('_', ' ')]
+                        }
+                      }}
                       labelStyle={{ color: '#ffffff' }}
                       cursor={{ fill: '#ffffff10' }}
                     />
@@ -521,25 +619,43 @@ export default function Home() {
                       verticalAlign="top"
                       height={40}
                     />
-                    <Bar
+                    <Line
+                      type="monotone"
                       dataKey="efficiency"
-                      fill="#3b82f6"
-                      name="Efficiency %"
-                      radius={[4, 4, 0, 0]}
-                      animationDuration={700}
+                      stroke="#3b82f6"
+                      strokeWidth={3}
+                      name="System Efficiency"
+                      animationDuration={800}
                       animationEasing="ease-out"
                       isAnimationActive={true}
+                      dot={false}
+                      activeDot={false}
                     />
-                    <Bar
-                      dataKey="capacity"
-                      fill="#10b981"
-                      name="Capacity %"
-                      radius={[4, 4, 0, 0]}
-                      animationDuration={700}
+                    <Line
+                      type="monotone"
+                      dataKey="traffic_density"
+                      stroke="#10b981"
+                      strokeWidth={3}
+                      name="Traffic Density"
+                      animationDuration={1200}
                       animationEasing="ease-out"
                       isAnimationActive={true}
+                      dot={false}
+                      activeDot={false}
                     />
-                  </BarChart>
+                    <Line
+                      type="monotone"
+                      dataKey="signal_optimization"
+                      stroke="#f59e0b"
+                      strokeWidth={3}
+                      name="Signal Optimization"
+                      animationDuration={1000}
+                      animationEasing="ease-out"
+                      isAnimationActive={true}
+                      dot={false}
+                      activeDot={false}
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

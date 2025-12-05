@@ -1,0 +1,5 @@
+{
+    "require": {
+        "luilliarcec/filament-shield": "^2.2"
+    }
+}

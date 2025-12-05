@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use UnitEnum;
 use BackedEnum;
 use Filament\Panel;
 use Filament\Pages\Page;
@@ -15,6 +16,8 @@ use App\Filament\Widgets\StreamingPerformanceChart;
 class Dashboard extends BaseDashboard
 {
     protected static string|BackedEnum|null $navigationIcon = 'bxs-dashboard';
+
+    //protected static string|UnitEnum|null $navigationGroup = 'Dashboard';
 
     protected static ?int $navigationSort = 1;
 

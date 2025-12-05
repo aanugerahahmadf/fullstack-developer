@@ -1,5 +1,5 @@
 // API configuration for the frontend to communicate directly with the backend
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000/api';
 
 // Define response wrapper interface
 interface ApiResponse<T> {
@@ -219,7 +219,7 @@ export const getCctvStreamUrl = async (cctvId: string): Promise<StreamData> => {
 export const getProductionTrends = async (startDate?: string, endDate?: string): Promise<ProductionTrend[]> => {
   try {
     // Build query string with optional parameters
-    let url = '/chart/production-trends';
+    let url = '/production-trends';
     const queryParams = new URLSearchParams();
     
     if (startDate) {
@@ -245,7 +245,7 @@ export const getProductionTrends = async (startDate?: string, endDate?: string):
 
 export const getUnitPerformance = async (): Promise<UnitPerformance[]> => {
   try {
-    const response = await api<UnitPerformance[]>('/chart/unit-performance');
+    const response = await api<UnitPerformance[]>('/unit-performance');
     return response;
   } catch (error) {
     console.error('Error fetching unit performance:', error);

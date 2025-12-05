@@ -26,4 +26,42 @@ class Stats extends Model
     protected $casts = [
         'timestamp' => 'datetime',
     ];
+
+    // Clear cache when stats is created, updated, or deleted
+    public static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($stats) {
+            \App\Models\Building::clearAllCaches();
+        });
+
+        static::updating(function ($stats) {
+            \App\Models\Building::clearAllCaches();
+        });
+
+        static::retrieved(function ($stats) {
+            \App\Models\Building::clearAllCaches();
+        });
+
+        static::saving(function ($stats) {
+            \App\Models\Building::clearAllCaches();
+        });
+
+        static::saved(function ($stats) {
+            \App\Models\Building::clearAllCaches();
+        });
+
+        static::created(function ($stats) {
+            \App\Models\Building::clearAllCaches();
+        });
+
+        static::updated(function ($stats) {
+            \App\Models\Building::clearAllCaches();
+        });
+
+        static::deleted(function ($stats) {
+            \App\Models\Building::clearAllCaches();
+        });
+    }
 }

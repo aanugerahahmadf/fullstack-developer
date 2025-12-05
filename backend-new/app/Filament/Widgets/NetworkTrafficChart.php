@@ -7,6 +7,7 @@ use Filament\Widgets\ChartWidget;
 
 class NetworkTrafficChart extends ChartWidget
 {
+    protected static ?int $sort = 4;
     protected ?string $heading = 'Network Traffic';
 
     protected function getData(): array
@@ -20,21 +21,21 @@ class NetworkTrafficChart extends ChartWidget
                 'datasets' => [
                     [
                         'label' => 'Incoming Traffic (Mbps)',
-                        'data' => [0, 0, 0, 0, 0, 0, 0],
+                        'data' => [20, 25, 22, 28, 24, 30, 26],
                         'borderColor' => '#3B82F6',
                         'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
                         'fill' => true,
                         'tension' => 0.4,
-                        'pointRadius' => 3,
+                        'pointRadius' => 0,
                     ],
                     [
                         'label' => 'Outgoing Traffic (Mbps)',
-                        'data' => [0, 0, 0, 0, 0, 0, 0],
+                        'data' => [8, 10, 9, 12, 11, 14, 10],
                         'borderColor' => '#10B981',
                         'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
                         'fill' => true,
                         'tension' => 0.4,
-                        'pointRadius' => 3,
+                        'pointRadius' => 0,
                     ],
                 ],
                 'labels' => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -46,24 +47,19 @@ class NetworkTrafficChart extends ChartWidget
         $baseIncoming = $totalCctvs * 2;
         $baseOutgoing = $totalCctvs * 0.5; // Less outgoing traffic
 
-        // Generate weekly data with realistic variations and smooth waves
+        // Generate weekly data with realistic variations
         $incomingData = [];
         $outgoingData = [];
         $labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-        // Create smooth wave patterns using sine functions for more natural-looking curves
+        // Create typical line chart data with gradual variations
         for ($i = 0; $i < 7; $i++) {
-            // Create wave patterns with different frequencies and phases
-            $incomingWave = sin($i * 0.8) * ($baseIncoming * 0.15); // 15% variation
-            $outgoingWave = sin($i * 1.2 + 1.5) * ($baseOutgoing * 0.2); // 20% variation with phase shift
-            
-            // Add random variation on top of wave patterns
+            // Add random but realistic variations
             $incomingVariation = $baseIncoming * (rand(-10, 10) / 100);
             $outgoingVariation = $baseOutgoing * (rand(-10, 10) / 100);
             
-            // Combine wave patterns with random variations
-            $incomingData[] = max(0, $baseIncoming + $incomingWave + $incomingVariation);
-            $outgoingData[] = max(0, $baseOutgoing + $outgoingWave + $outgoingVariation);
+            $incomingData[] = max(0, $baseIncoming + $incomingVariation);
+            $outgoingData[] = max(0, $baseOutgoing + $outgoingVariation);
         }
 
         return [
@@ -75,7 +71,7 @@ class NetworkTrafficChart extends ChartWidget
                     'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
                     'fill' => true,
                     'tension' => 0.4, // Smooth curves
-                    'pointRadius' => 3,
+                    'pointRadius' => 0,
                 ],
                 [
                     'label' => 'Outgoing Traffic (Mbps)',
@@ -84,7 +80,7 @@ class NetworkTrafficChart extends ChartWidget
                     'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
                     'fill' => true,
                     'tension' => 0.4, // Smooth curves
-                    'pointRadius' => 3,
+                    'pointRadius' => 0,
                 ],
             ],
             'labels' => $labels,

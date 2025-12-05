@@ -10,25 +10,42 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class DashboardStats extends StatsOverviewWidget
 {
-    public function getHeading(): ?string
-    {
-        return 'Dashboard Statistics';
-    }
+    protected static ?int $sort = 1;
+   
     protected function getStats(): array
     {
+        $totalBuildings = Building::count();
+
+        $totalRooms = Room::count();
+
+        $totalCctvs = Cctv::count();
+
+        // Calculate growth percentages (mock data for demonstration)
+        $buildingGrowth = rand(5, 15);
+        $roomGrowth = rand(3, 12);
+        $cctvGrowth = rand(8, 20);
+
         return [
-            Stat::make('Total Buildings', Building::count())
-                ->description('All facility buildings')
-                ->descriptionIcon('heroicon-m-building-office-2')
-                ->color('primary'),
-            Stat::make('Total Rooms', Room::count())
-                ->description('All monitored rooms')
-                ->descriptionIcon('heroicon-m-home')
-                ->color('success'),
-            Stat::make('Active CCTV Cameras', Cctv::count())
-                ->description('Cameras currently streaming')
-                ->descriptionIcon('heroicon-m-video-camera')
-                ->color('warning'),
+            Stat::make('Total Buildings', $totalBuildings)
+                ->description($buildingGrowth . '% increase')
+                ->descriptionIcon('heroicon-m-arrow-trending-up')
+                ->color('primary')
+                ->chart([7, 2, 5, 3, 9, 5, $totalBuildings])
+                ->icon('heroicon-o-building-office-2'),
+
+            Stat::make('Total Rooms', $totalRooms)
+                ->description($roomGrowth . '% increase')
+                ->descriptionIcon('heroicon-m-arrow-trending-up')
+                ->color('success')
+                ->chart([4, 1, 6, 2, 8, 4, $totalRooms])
+                ->icon('heroicon-o-home'),
+
+            Stat::make('Total CCTV', $totalCctvs)
+                ->description($cctvGrowth . '% increase')
+                ->descriptionIcon('heroicon-m-arrow-trending-up')
+                ->color('warning')
+                ->chart([2, 4, 3, 7, 5, 6, $totalCctvs])
+                ->icon('heroicon-o-video-camera'),
         ];
     }
 }

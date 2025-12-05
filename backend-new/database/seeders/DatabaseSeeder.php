@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         // Seed the super admin user only
         $this->call([
             SuperAdminSeeder::class,
+            FilamentShieldPermissionsSeeder::class,
         ]);
     }
 }

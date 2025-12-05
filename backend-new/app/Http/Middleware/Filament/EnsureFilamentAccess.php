@@ -31,12 +31,12 @@ class EnsureFilamentAccess
                 return $next($request);
             }
 
-            // Check if user is authenticated and has the super-admin role
+            // Check if user is authenticated and has the Super Admin role
             if (Auth::check()) {
                 $user = Auth::user();
-                // Check if user has super-admin role using Spatie Permission
+                // Check if user has Super Admin role using Spatie Permission
                 // Using a database query approach to avoid IDE intelephense error
-                $superAdminRole = Role::where('name', 'super-admin')->first();
+                $superAdminRole = Role::where('name', 'Super Admin')->first();
                 if ($superAdminRole && $user->roles->contains($superAdminRole)) {
                     return $next($request);
                 }

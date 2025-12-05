@@ -7,6 +7,7 @@ use Filament\Widgets\ChartWidget;
 
 class CctvStatusTrendChart extends ChartWidget
 {
+    protected static ?int $sort = 2;
     protected ?string $heading = 'CCTV Status Trend';
 
     protected function getData(): array
@@ -20,21 +21,21 @@ class CctvStatusTrendChart extends ChartWidget
                 'datasets' => [
                     [
                         'label' => 'Online Cameras',
-                        'data' => [0, 0, 0, 0, 0, 0, 0],
+                        'data' => [8, 9, 7, 10, 8, 9, 7],
                         'borderColor' => '#10B981',
                         'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
                         'fill' => true,
                         'tension' => 0.4,
-                        'pointRadius' => 3,
+                        'pointRadius' => 0,
                     ],
                     [
                         'label' => 'Offline Cameras',
-                        'data' => [0, 0, 0, 0, 0, 0, 0],
+                        'data' => [2, 1, 3, 0, 2, 1, 3],
                         'borderColor' => '#EF4444',
                         'backgroundColor' => 'rgba(239, 68, 68, 0.1)',
                         'fill' => true,
                         'tension' => 0.4,
-                        'pointRadius' => 3,
+                        'pointRadius' => 0,
                     ],
                 ],
                 'labels' => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -45,24 +46,19 @@ class CctvStatusTrendChart extends ChartWidget
         $baseOnline = max(0, round($totalCctvs * 0.95)); // 95% online as base
         $baseOffline = max(0, $totalCctvs - $baseOnline);
 
-        // Generate weekly trend data with realistic variations and smooth waves
+        // Generate weekly trend data with realistic variations
         $onlineData = [];
         $offlineData = [];
         $labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-        // Create smooth wave patterns using sine functions for more natural-looking curves
+        // Create typical line chart data with gradual variations
         for ($i = 0; $i < 7; $i++) {
-            // Create wave patterns with different frequencies and phases
-            $onlineWave = sin($i * 0.7) * ($totalCctvs * 0.03); // 3% variation
-            $offlineWave = sin($i * 0.7 + 3.14) * ($totalCctvs * 0.03); // Opposite phase for contrast
-            
-            // Add random variation on top of wave patterns
+            // Add random but realistic variations
             $onlineVariation = rand(-round($totalCctvs * 0.02), round($totalCctvs * 0.02));
             $offlineVariation = rand(-round($totalCctvs * 0.02), round($totalCctvs * 0.02));
             
-            // Combine wave patterns with random variations
-            $dailyOnline = max(0, min($totalCctvs, $baseOnline + $onlineWave + $onlineVariation));
-            $dailyOffline = max(0, min($totalCctvs, $totalCctvs - $dailyOnline + $offlineWave + $offlineVariation));
+            $dailyOnline = max(0, min($totalCctvs, $baseOnline + $onlineVariation));
+            $dailyOffline = max(0, min($totalCctvs, $totalCctvs - $dailyOnline + $offlineVariation));
             
             $onlineData[] = $dailyOnline;
             $offlineData[] = $dailyOffline;
@@ -77,7 +73,7 @@ class CctvStatusTrendChart extends ChartWidget
                     'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
                     'fill' => true,
                     'tension' => 0.4, // Smooth curves
-                    'pointRadius' => 3,
+                    'pointRadius' => 0,
                 ],
                 [
                     'label' => 'Offline Cameras',
@@ -86,7 +82,7 @@ class CctvStatusTrendChart extends ChartWidget
                     'backgroundColor' => 'rgba(239, 68, 68, 0.1)',
                     'fill' => true,
                     'tension' => 0.4, // Smooth curves
-                    'pointRadius' => 3,
+                    'pointRadius' => 0,
                 ],
             ],
             'labels' => $labels,

@@ -19,12 +19,13 @@ return new class extends Migration
             $table->string('username')->default('admin');
             $table->string('password')->default('password.123');
             $table->string('ip_address');
+            $table->unsignedSmallInteger('rtsp_port')->default(554);
+            $table->unsignedSmallInteger('hls_port')->default(8000);
             $table->string('ip_rtsp_url')->nullable();
-            $table->timestamps();
-
-            // Add indexes for better query performance
+            $table->string('hls_url')->nullable();
             $table->index('building_id');
             $table->index('room_id');
+            $table->timestamps();
         });
     }
 

@@ -1,0 +1,1 @@
+<?php require_once 'vendor/autoload.php'; app()->boot();  = \App\Models\User::first(); echo 'User: ' . ->name . PHP_EOL; echo 'Roles: ' . implode(', ', ->roles->pluck('name')->toArray()) . PHP_EOL; echo 'Permissions: ' . implode(', ', ->getAllPermissions()->pluck('name')->toArray()) . PHP_EOL;

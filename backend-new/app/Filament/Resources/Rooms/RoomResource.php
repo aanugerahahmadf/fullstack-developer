@@ -23,12 +23,15 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use App\Filament\Resources\Rooms\Pages\ManageRooms;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Gate;
 
 class RoomResource extends Resource
 {
     protected static ?string $model = Room::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Playlist And Maps';
+    protected static string|UnitEnum|null $navigationGroup = 'Web';
+
+    protected static string|BackedEnum|null $navigationIcon = 'gmdi-meeting-room';
 
     protected static ?string $navigationLabel = 'Room';
 
@@ -38,6 +41,16 @@ class RoomResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+
+    public static function canViewAny(): bool
+    {
+        return true; // Allow all authenticated users to view the list
+    }
+
+    public static function canCreate(): bool
+    {
+        return Gate::allows('Create:Room');
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -77,31 +90,17 @@ class RoomResource extends Resource
                     ->alignment('center'),
                 TextColumn::make('created_at')
                     ->dateTime()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->alignment('center'),
                 TextColumn::make('updated_at')
                     ->dateTime()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->alignment('center'),
             ])
             ->filters([
                 //
             ])
-            ->headerActions([
-                CreateAction::make()
-                    ->label('Create Room')
-                    ->successNotification(
-                        Notification::make()
-                            ->success()
-                            ->title('Room created')
-                            ->body('The room has been created successfully.')
-                    ),
-                ExportAction::make()
-                    ->exporter(RoomExporter::class)
-                    ->label('Export Room'),
-            ])
+
             ->recordActions([
                 ViewAction::make()
                     ->button()
@@ -111,6 +110,7 @@ class RoomResource extends Resource
                     ->button()
                     ->color('warning')
                     ->size('lg')
+                    ->visible(fn (): bool => Gate::allows('Update:Room'))
                     ->successNotification(
                         Notification::make()
                             ->success()
@@ -121,6 +121,7 @@ class RoomResource extends Resource
                     ->button()
                     ->color('danger')
                     ->size('lg')
+                    ->visible(fn (): bool => Gate::allows('Delete:Room'))
                     ->successNotification(
                         Notification::make()
                             ->success()
@@ -131,6 +132,7 @@ class RoomResource extends Resource
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
+                        ->visible(fn (): bool => Gate::allows('Delete:Room'))
                         ->successNotification(
                             Notification::make()
                                 ->success()

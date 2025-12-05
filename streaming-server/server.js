@@ -62,7 +62,7 @@ nms.run();
 // Add Express server for additional API endpoints
 const app = express();
 app.use(express.json());
-const PORT = 3000;
+const PORT = 3001;
 
 // API endpoint to start a stream
 app.post('/api/start-stream/:cctvId', async (req, res) => {
@@ -190,5 +190,5 @@ app.listen(PORT, () => {
 
 console.log('Node Media Server started');
 console.log('RTMP server listening on port 1935');
-console.log('HTTP server listening on port 8000'); // Updated port
+console.log(`HTTP server listening on port ${config.http.port}`);
 console.log(`Streaming API server listening on port ${PORT}`);

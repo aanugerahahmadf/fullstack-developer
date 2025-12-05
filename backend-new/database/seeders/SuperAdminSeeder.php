@@ -19,10 +19,10 @@ class SuperAdminSeeder extends Seeder
     {
         // Create the super admin role if it doesn't exist
         $superAdminRole = Role::firstOrCreate([
-            'name' => 'super-admin',
+            'name' => 'Super Admin', // Changed to match the existing role name
             'guard_name' => 'web'
         ], [
-            'name' => 'super-admin',
+            'name' => 'Super Admin', // Changed to match the existing role name
             'guard_name' => 'web'
         ]);
 
@@ -41,6 +41,6 @@ class SuperAdminSeeder extends Seeder
         );
 
         // Assign the super admin role to the user
-        $user->assignRole('super-admin');
+        $user->assignRole('Super Admin'); // Changed to match the existing role name
     }
 }

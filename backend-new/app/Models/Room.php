@@ -41,16 +41,51 @@ class Room extends Model
     {
         parent::boot();
 
+        static::creating(function ($room) {
+            \App\Models\Building::clearAllCaches();
+            self::clearAllCaches();
+        });
+
+        static::updating(function ($room) {
+            \App\Models\Building::clearAllCaches();
+            self::clearAllCaches();
+        });
+
+        static::retrieved(function ($room) {
+            \App\Models\Building::clearAllCaches();
+            self::clearAllCaches();
+        });
+
+        static::saving(function ($room) {
+            \App\Models\Building::clearAllCaches();
+            self::clearAllCaches();
+        });
+
+        static::saved(function ($room) {
+            \App\Models\Building::clearAllCaches();
+            self::clearAllCaches();
+        });
+
         static::created(function ($room) {
             \App\Models\Building::clearAllCaches();
+            self::clearAllCaches();
         });
 
         static::updated(function ($room) {
             \App\Models\Building::clearAllCaches();
+            self::clearAllCaches();
         });
 
         static::deleted(function ($room) {
             \App\Models\Building::clearAllCaches();
+            self::clearAllCaches();
         });
+    }
+
+    // Method to clear all relevant caches
+    public static function clearAllCaches()
+    {
+        // Delegate to Building model's clearAllCaches method for now
+        \App\Models\Building::clearAllCaches();
     }
 }

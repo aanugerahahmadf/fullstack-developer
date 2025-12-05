@@ -4,7 +4,7 @@
     "type": "module",
     "scripts": {
         "dev": "cd ../v0-pertamina-frontend-build && npm run dev",
-        "build": "cd ../v0-pertamina-frontend-build && npm run build",
+        "build": "vite build",
         "preview": "cd ../v0-pertamina-frontend-build && npm run start",
         "start": "node server.js"
     },

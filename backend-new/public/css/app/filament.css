@@ -1,0 +1,81 @@
+/* ================================
+   FORCE TOPBAR HEIGHT
+   ================================ */
+.fi-topbar, 
+.fi-topbar > div {
+    height: 60px !important;      /* Ubah sesuai kebutuhan */
+    min-height: 60px !important;
+    max-height: 60px !important;
+}
+
+
+/* ================================
+   FORCE LOGO SIZE (IMG)
+   ================================ */
+.fi-logo img,
+.fi-topbar > div .fi-logo img,
+.fi-topbar-item img,
+.fi-topbar-brand img,
+.custom-filament-logo {
+    height: 9.5rem !important;      /* Ubah ukuran logo */
+    width: auto !important;
+    max-height: 9.5rem !important;
+    object-fit: contain !important;
+    display: block !important;
+}
+
+/* ================================
+   DARK MODE LOGO ENHANCEMENT
+   ================================ */
+/* Remove conflicting CSS rules - using picture element instead */
+
+
+/* ================================
+   REMOVE FILAMENT DEFAULT SIZING
+   ================================ */
+.fi-logo,
+.fi-topbar-item,
+.fi-topbar-brand {
+    height: auto !important;
+    max-height: none !important;
+}
+
+
+/* ================================
+   FIX ALIGNMENT LOGO DALAM NAVBAR
+   ================================ */
+.fi-topbar .fi-logo,
+.fi-topbar-brand {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+}
+
+/* ================================
+   DARK MODE NAVBAR BACKGROUND
+   ================================ */
+.fi-topbar:where(.dark, .dark *) {
+    background-color: #000000 !important;
+}
+
+
+/* ================================
+   FIX DOUBLE-WRAPPER (Filament 3.2+)
+   ================================ */
+.fi-topbar-item > div > img {
+    height: 9.5rem !important;
+    width: auto !important;
+}
+
+/* ================================
+   SIDEBAR LOGO SPECIFIC STYLES
+   ================================ */
+.fi-sidebar .custom-filament-logo {
+    height: 9.5rem !important;
+    width: auto !important;
+    max-height: 9.5rem !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 1rem auto !important;
+}

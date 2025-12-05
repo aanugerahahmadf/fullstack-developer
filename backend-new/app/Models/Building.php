@@ -30,6 +30,47 @@ class Building extends Model
         'marker_icon_url',
     ];
 
+    protected $casts = [
+        'latitude' => 'float',
+        'longitude' => 'float',
+    ];
+
+    public static function rules()
+    {
+        return [
+            'latitude' => 'nullable|numeric|between:-90,90|decimal:0,8',
+            'longitude' => 'nullable|numeric|between:-180,180|decimal:0,8',
+        ];
+    }
+
+    // Convert decimal degrees to DMS format for display
+    public function getLatitudeDmsAttribute()
+    {
+        if (!$this->latitude) return null;
+        
+        $degrees = floor(abs($this->latitude));
+        $minutes = fmod(abs($this->latitude) * 60, 60);
+        $seconds = fmod($minutes * 60, 60);
+        $minutes = floor($minutes);
+        $hemisphere = $this->latitude >= 0 ? 'N' : 'S';
+        
+        return sprintf('%d° %d′ %.2f″ %s', $degrees, $minutes, $seconds, $hemisphere);
+    }
+
+    // Convert decimal degrees to DMS format for display
+    public function getLongitudeDmsAttribute()
+    {
+        if (!$this->longitude) return null;
+        
+        $degrees = floor(abs($this->longitude));
+        $minutes = fmod(abs($this->longitude) * 60, 60);
+        $seconds = fmod($minutes * 60, 60);
+        $minutes = floor($minutes);
+        $hemisphere = $this->longitude >= 0 ? 'E' : 'W';
+        
+        return sprintf('%d° %d′ %.2f″ %s', $degrees, $minutes, $seconds, $hemisphere);
+    }
+
     public function rooms(): HasMany
     {
         return $this->hasMany(Room::class);
@@ -44,6 +85,35 @@ class Building extends Model
     public static function boot()
     {
         parent::boot();
+
+        static::creating(function ($building) {
+            static::clearAllCaches();
+        });
+
+        static::updating(function ($building) {
+            static::clearAllCaches();
+        });
+
+        static::retrieved(function ($building) {
+            static::clearAllCaches();
+        });
+
+        static::saving(function ($building) {
+            static::clearAllCaches();
+            
+            // Validate latitude and longitude ranges with higher precision
+            if ($building->latitude !== null) {
+                $building->latitude = max(-90, min(90, round((float)$building->latitude, 8)));
+            }
+            
+            if ($building->longitude !== null) {
+                $building->longitude = max(-180, min(180, round((float)$building->longitude, 8)));
+            }
+        });
+
+        static::saved(function ($building) {
+            static::clearAllCaches();
+        });
 
         static::created(function ($building) {
             static::clearAllCaches();

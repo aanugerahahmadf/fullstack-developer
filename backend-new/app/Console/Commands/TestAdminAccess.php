@@ -30,14 +30,14 @@ class TestAdminAccess extends Command
         if ($user) {
             $this->info('User found: ' . $user->name . ' (' . $user->email . ')');
 
-            // Check if user has super-admin role
-            if ($user->hasRole('super-admin')) {
-                $this->info('User has super-admin role');
+            // Check if user has Super Admin role
+            if ($user->hasRole('Super Admin')) {
+                $this->info('User has Super Admin role');
             } else {
-                $this->info('User does not have super-admin role');
+                $this->info('User does not have Super Admin role');
                 // Assign the role
-                $user->assignRole('super-admin');
-                $this->info('Assigned super-admin role to user');
+                $user->assignRole('Super Admin');
+                $this->info('Assigned Super Admin role to user');
             }
         } else {
             $this->error('No user found');

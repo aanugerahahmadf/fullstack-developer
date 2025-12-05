@@ -9,3 +9,50 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* Custom styles for Filament navbar - FIXED HEIGHT WITH LARGE LOGO */
+.filament-navbar {
+    height: 4rem !important;
+    min-height: 4rem !important;
+    max-height: 4rem !important;
+    overflow: visible !important;
+    position: relative !important;
+}
+
+.filament-navbar-brand {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 100% !important;
+    overflow: visible !important;
+    position: relative !important;
+}
+
+.filament-navbar-brand-logo {
+    max-height: 7.5rem !important;
+    width: auto !important;
+    object-fit: contain;
+    position: absolute !important;
+    z-index: 10 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Ensure sidebar navigation items don't expand navbar height */
+.filament-sidebar-nav-link-button,
+.filament-topbar-nav-link-button {
+    height: auto !important;
+}
+
+/* Custom styles for Filament topbar */
+.fi-topbar {
+    height: 60px !important;
+    min-height: 60px !important;
+}
+
+.fi-topbar-brand img {
+    height: 48px !important;
+    width: auto !important;
+}

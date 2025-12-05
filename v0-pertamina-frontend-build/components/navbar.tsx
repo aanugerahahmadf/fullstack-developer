@@ -57,11 +57,11 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3" prefetch={true}>
             <Image
-              src="/images/logo-pertamina.png"
+              src="/images/logo-pertamina-light.png"
               alt="Pertamina"
               width={136}
               height={120}
-              className="h-34 w-38 object-contain"
+              className="h-50 w-54 object-contain"
               priority
               onError={(e) => {
                 console.warn('Failed to load logo image:', e);

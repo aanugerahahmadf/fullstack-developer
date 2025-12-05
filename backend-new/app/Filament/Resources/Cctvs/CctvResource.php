@@ -24,12 +24,15 @@ use Filament\Forms\Components\TextInput;
 use App\Filament\Resources\Cctvs\Pages\ManageCctvs;
 use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Gate;
 
 class CctvResource extends Resource
 {
     protected static ?string $model = Cctv::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Playlist And Maps';
+    protected static string|UnitEnum|null $navigationGroup = 'Web';
+
+    protected static string|BackedEnum|null $navigationIcon = 'fluentui-camera-dome-28';
 
     protected static ?string $navigationLabel = 'Cctv';
 
@@ -38,6 +41,16 @@ class CctvResource extends Resource
     protected static ?string $pluralModelLabel = 'Cctv Management';
 
     protected static ?int $navigationSort = 3;
+
+    public static function canViewAny(): bool
+    {
+        return true; // Allow all authenticated users to view the list
+    }
+
+    public static function canCreate(): bool
+    {
+        return Gate::allows('Create:Cctv');
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -62,20 +75,107 @@ class CctvResource extends Resource
                     ->required()
                     ->live(),
                 TextInput::make('name')
+                    ->label('Name')
                     ->required(),
                 TextInput::make('username')
                     ->default('admin'),
                 TextInput::make('password')
+                    ->label('Password')
                     ->password()
                     ->revealable()
                     ->default('password.123'),
                 TextInput::make('ip_address')
+                    ->label('IP Address')
                     ->required()
-                    ->ipv4(),
+                    ->ipv4()
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(function (callable $get, callable $set) {
+                        $ip = $get('ip_address');
+                        $rtspPort = $get('rtsp_port') ?? 554;
+                        $hlsPort = $get('hls_port') ?? 8000;
+                        
+                        if ($ip) {
+                            $set('ip_rtsp_url', "rtsp://admin:password.123@{$ip}:{$rtspPort}/stream");
+                            // Replace dots with underscores for HLS URL
+                            $hlsStreamId = str_replace('.', '_', $ip);
+                            $set('hls_url', "http://127.0.0.1:{$hlsPort}/live/{$hlsStreamId}/index.m3u8");
+                        }
+                    }),
+                TextInput::make('rtsp_port')
+                    ->label('RTSP Port')
+                    ->numeric()
+                    ->default(554)
+                    ->minValue(1)
+                    ->maxValue(65535)
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(function (callable $get, callable $set) {
+                        $ip = $get('ip_address');
+                        $rtspPort = $get('rtsp_port') ?? 554;
+                        $hlsPort = $get('hls_port') ?? 8000;
+                        
+                        if ($ip) {
+                            $set('ip_rtsp_url', "rtsp://admin:password.123@{$ip}:{$rtspPort}/stream");
+                            // Replace dots with underscores for HLS URL
+                            $hlsStreamId = str_replace('.', '_', $ip);
+                            $set('hls_url', "http://127.0.0.1:{$hlsPort}/live/{$hlsStreamId}/index.m3u8");
+                        }
+                    }),
+                TextInput::make('hls_port')
+                    ->label('HLS Port')
+                    ->numeric()
+                    ->default(8000)
+                    ->minValue(1)
+                    ->maxValue(65535)
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(function (callable $get, callable $set) {
+                        $ip = $get('ip_address');
+                        $rtspPort = $get('rtsp_port') ?? 554;
+                        $hlsPort = $get('hls_port') ?? 8000;
+                        
+                        if ($ip) {
+                            $set('ip_rtsp_url', "rtsp://admin:password.123@{$ip}:{$rtspPort}/stream");
+                            // Replace dots with underscores for HLS URL
+                            $hlsStreamId = str_replace('.', '_', $ip);
+                            $set('hls_url', "http://127.0.0.1:{$hlsPort}/live/{$hlsStreamId}/index.m3u8");
+                        }
+                    }),
                 TextInput::make('ip_rtsp_url')
-                    ->label('RTSP URL')
-                    ->url()
-                    ->placeholder('rtsp://username:password@ip:port/path'),
+                    ->label('IP RTSP URL')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->formatStateUsing(function ($state, $record, callable $get) {
+                        if ($record) {
+                            return $record->ip_rtsp_url ?? '';
+                        }
+                        
+                        // Show preview of what the URL will look like
+                        $ip = $get('ip_address');
+                        $rtspPort = $get('rtsp_port') ?? 554;
+                        if ($ip) {
+                            return "rtsp://admin:password.123@{$ip}:{$rtspPort}/stream";
+                        }
+                        return '';
+                    })
+                    ->visible(fn ($record) => $record !== null),
+                TextInput::make('hls_url')
+                    ->label('IP HLS URL')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->formatStateUsing(function ($state, $record, callable $get) {
+                        if ($record) {
+                            return $record->hls_url ?? '';
+                        }
+                        
+                        // Show preview of what the URL will look like
+                        $ip = $get('ip_address');
+                        $hlsPort = $get('hls_port') ?? 8000;
+                        if ($ip) {
+                            $hlsStreamId = str_replace('.', '_', $ip);
+                            return "http://127.0.0.1:{$hlsPort}/live/{$hlsStreamId}/index.m3u8";
+                        }
+                        return '';
+                    })
+                    ->visible(fn ($record) => $record !== null),
             ]);
     }
 
@@ -89,49 +189,43 @@ class CctvResource extends Resource
                         return $rowLoop->iteration;
                     })
                     ->alignment('center'),
+                TextColumn::make('name')
+                    ->label('Name')
+                    ->searchable()
+                    ->alignment('center'),
                 TextColumn::make('building.name')
+                    ->label('Building')
                     ->searchable()
                     ->alignment('center'),
                 TextColumn::make('room.name')
-                    ->searchable()
-                    ->alignment('center'),
-                TextColumn::make('name')
+                    ->label('Room')
                     ->searchable()
                     ->alignment('center'),
                 TextColumn::make('ip_address')
+                    ->label('IP Address')
                     ->searchable()
                     ->alignment('center'),
                 TextColumn::make('ip_rtsp_url')
-                    ->label('RTSP URL')
+                    ->label('IP RTSP URL')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: false)
+                    ->alignment('center'),
+                TextColumn::make('hls_url')
+                    ->label('IP HLS URL')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: false)
                     ->alignment('center'),
                 TextColumn::make('created_at')
                     ->dateTime()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->alignment('center'),
                 TextColumn::make('updated_at')
                     ->dateTime()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->alignment('center'),
             ])
             ->filters([
                 //
-            ])
-            ->headerActions([
-                CreateAction::make()
-                    ->label('Create Cctv')
-                    ->successNotification(
-                        Notification::make()
-                            ->success()
-                            ->title('CCTV created')
-                            ->body('The CCTV has been created successfully.')
-                    ),
-                ExportAction::make()
-                    ->exporter(CctvExporter::class)
-                    ->label('Export Cctv'),
             ])
             ->recordActions([
                 ViewAction::make()
@@ -142,6 +236,7 @@ class CctvResource extends Resource
                     ->button()
                     ->color('warning')
                     ->size('lg')
+                    ->visible(fn (): bool => Gate::allows('Update:Cctv'))
                     ->successNotification(
                         Notification::make()
                             ->success()
@@ -152,6 +247,7 @@ class CctvResource extends Resource
                     ->button()
                     ->color('danger')
                     ->size('lg')
+                    ->visible(fn (): bool => Gate::allows('Delete:Cctv'))
                     ->successNotification(
                         Notification::make()
                             ->success()
@@ -162,6 +258,7 @@ class CctvResource extends Resource
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
+                        ->visible(fn (): bool => Gate::allows('Delete:Cctv'))
                         ->successNotification(
                             Notification::make()
                                 ->success()
@@ -193,5 +290,4 @@ class CctvResource extends Resource
     {
         return 'The Number Of CCTV';
     }
-
 }

@@ -16,33 +16,26 @@ class PerformanceMonitor
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // For maximum performance, only monitor in debug mode
-        if (config('app.debug')) {
-            $start = microtime(true);
-            $response = $next($request);
-            $time = microtime(true) - $start;
+        // For maximum performance in production, skip monitoring entirely
+        if (!config('app.debug')) {
+            return $next($request);
+        }
+        
+        // In debug mode, monitor performance with minimal overhead
+        $start = microtime(true);
+        $response = $next($request);
+        $time = microtime(true) - $start;
 
-            // Log only slow requests (>50ms) to reduce overhead
-            if ($time > 0.05) {
-                Log::info('Slow API Request', [
-                    'url' => $request->url(),
-                    'time' => $time,
-                    'method' => $request->method(),
-                    'memory_peak' => memory_get_peak_usage(true) / 1024 / 1024, // MB
-                ]);
-            }
-
-            // Add performance headers only in debug mode
-            $response->headers->set('X-Response-Time', round($time * 1000, 2));
-            $response->headers->set('X-Memory-Usage', round(memory_get_peak_usage(true) / 1024 / 1024, 2) . 'MB');
-            return $response;
+        // Log only very slow requests (>100ms) to minimize overhead
+        if ($time > 0.1) {
+            Log::debug('API Request Performance', [
+                'url' => $request->url(),
+                'time_ms' => round($time * 1000, 2),
+                'method' => $request->method(),
+                'memory_mb' => round(memory_get_peak_usage(true) / 1024 / 1024, 2),
+            ]);
         }
 
-        // In production, skip monitoring for maximum speed but still optimize
-        $response = $next($request);
-
-        // Even in production, add minimal performance headers for client-side optimization
-        $response->headers->set('X-Response-Time', 'ultra-fast');
         return $response;
     }
 }

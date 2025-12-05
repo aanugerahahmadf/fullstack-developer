@@ -1,12 +1,13 @@
 <?php
 
 use App\Http\Controllers\Api\BuildingController;
-use App\Http\Controllers\Api\ChartController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\CctvController;
 use App\Http\Controllers\Api\FrontendBridgeController;
+use App\Http\Controllers\Api\ProductionTrendController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\StatsController;
+use App\Http\Controllers\Api\UnitPerformanceController;
 use App\Http\Middleware\Cors;
 use App\Http\Middleware\PerformanceMonitor;
 use Illuminate\Support\Facades\Route;
@@ -28,9 +29,12 @@ Route::middleware([PerformanceMonitor::class, Cors::class])->group(function () {
     Route::get('/stats', [StatsController::class, 'index'])->name('api.stats.index');
     Route::get('/contact', [ContactController::class, 'index'])->name('api.contact.index');
 
-    // Chart API endpoints
-    Route::get('/chart/production-trends', [ChartController::class, 'productionTrends'])->name('api.chart.production-trends');
-    Route::get('/chart/unit-performance', [ChartController::class, 'unitPerformance'])->name('api.chart.unit-performance');
+    // Production Trends API endpoint
+    Route::get('/production-trends', [ProductionTrendController::class, 'index'])->name('api.production-trends.index');
+    
+    // Unit Performance API endpoint
+    Route::get('/unit-performance', [UnitPerformanceController::class, 'index'])->name('api.unit-performance.index');
+    Route::get('/unit-performance/{unitName}', [UnitPerformanceController::class, 'show'])->name('api.unit-performance.show');
 
     // Stateful API endpoints
     Route::get('/buildings', [BuildingController::class, 'index'])->name('api.buildings.index');

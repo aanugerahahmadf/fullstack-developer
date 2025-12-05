@@ -1,0 +1,84 @@
+/* ================================
+   FORCE TOPBAR HEIGHT
+   ================================ */
+.fi-topbar, 
+.fi-topbar > div {
+    height: 65px !important;      /* Ubah sesuai kebutuhan */
+    min-height: 65px !important;
+    max-height: 65px !important;
+}
+
+/* ================================
+   FORCE LOGO SIZE (IMG)
+   ================================ */
+.fi-logo img,
+.fi-sidebar-brand img,
+.custom-filament-logo {
+    height: 10rem !important;
+    width: auto !important;
+    max-height: 10rem !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 1rem auto !important;
+}
+
+/* ================================
+   DARK MODE LOGO ENHANCEMENT
+   ================================ */
+/* Remove conflicting CSS rules - using picture element instead */
+
+/* ================================
+   REMOVE FILAMENT DEFAULT SIZING
+   ================================ */
+.fi-logo {
+    height: auto !important;
+    max-height: none !important;
+}
+
+/* ================================
+   DARK MODE NAVBAR BACKGROUND
+   ================================ */
+.fi-topbar:where(.dark, .dark *) {
+    background-color: #000000 !important;
+}
+
+/* ================================================
+   FILAMENT LOGO CUSTOM STYLE
+   ================================================ */
+
+/* ================================
+   SIDEBAR LOGO SPECIFIC STYLES
+   ================================ */
+.fi-sidebar .custom-filament-logo,
+.fi-sidebar-brand img {
+    height: 9.5rem !important;
+    width: auto !important;
+    max-height: 9.5rem !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 1rem 0 !important;
+    z-index: 1000 !important;
+}
+
+/* Handle logo when sidebar is collapsed */
+.fi-sidebar:not(.fi-sidebar-open) .custom-filament-logo,
+.fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-brand img {
+    display: none !important;
+}
+
+.fi-sidebar.fi-sidebar-open .custom-filament-logo,
+.fi-sidebar.fi-sidebar-open .fi-sidebar-brand img {
+    display: block !important;
+}
+
+/* Supaya smooth saat pindah Light → Dark */
+.dark .custom-filament-logo,
+.custom-filament-logo {
+    transition: opacity 0.25s ease-in-out,
+                transform 0.25s ease-in-out;
+}
+
+/* Hover effect opsional */
+.custom-filament-logo:hover {
+    transform: scale(1.03);
+}

@@ -8,13 +8,15 @@ use App\Repositories\RoomRepository;
 use App\Repositories\CctvRepository;
 use App\Repositories\ContactRepository;
 use App\Repositories\StatsRepository;
-use App\Repositories\ChartRepository;
+use App\Repositories\ProductionTrendRepository;
+use App\Repositories\UnitPerformanceRepository;
 use App\Services\BuildingService;
 use App\Services\RoomService;
 use App\Services\CctvService;
 use App\Services\ContactService;
+use App\Services\ProductionTrendService;
 use App\Services\StatsService;
-use App\Services\ChartService;
+use App\Services\UnitPerformanceService;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -44,8 +46,12 @@ class RepositoryServiceProvider extends ServiceProvider
             return new StatsRepository($app->make(\App\Models\Stats::class));
         });
 
-        $this->app->bind(ChartRepository::class, function ($app) {
-            return new ChartRepository($app->make(\App\Models\Chart::class));
+        $this->app->bind(ProductionTrendRepository::class, function ($app) {
+            return new ProductionTrendRepository($app->make(\App\Models\ProductionTrend::class));
+        });
+        
+        $this->app->bind(UnitPerformanceRepository::class, function ($app) {
+            return new UnitPerformanceRepository($app->make(\App\Models\UnitPerformance::class));
         });
 
         // Services
@@ -69,8 +75,15 @@ class RepositoryServiceProvider extends ServiceProvider
             return new StatsService($app->make(StatsRepository::class));
         });
 
-        $this->app->bind(ChartService::class, function ($app) {
-            return new ChartService($app->make(ChartRepository::class));
+        $this->app->bind(ProductionTrendService::class, function ($app) {
+            return new ProductionTrendService($app->make(ProductionTrendRepository::class));
+        });
+        
+        $this->app->bind(UnitPerformanceService::class, function ($app) {
+            return new UnitPerformanceService(
+                $app->make(UnitPerformanceRepository::class),
+                $app->make(BuildingRepository::class)
+            );
         });
     }
 
@@ -79,6 +92,8 @@ class RepositoryServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // This method is called after all service providers have been registered
+        // We can perform any additional setup here if needed
+        // For now, we're just leaving it empty as our bindings are handled in register()
     }
 }

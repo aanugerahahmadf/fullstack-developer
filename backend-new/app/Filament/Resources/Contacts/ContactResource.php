@@ -9,7 +9,6 @@ use Filament\Tables\Table;
 use Filament\Schemas\Schema;
 use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
 use Filament\Actions\ExportAction;
 use App\Filament\Exports\ContactExporter;
@@ -22,12 +21,16 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use App\Filament\Resources\Contacts\Pages\ManageContacts;
 use Filament\Notifications\Notification;
+use Filament\Actions\ViewAction;
+use Illuminate\Support\Facades\Gate;
 
 class ContactResource extends Resource
 {
     protected static ?string $model = Contact::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Contact Us';
+    protected static string|UnitEnum|null $navigationGroup = 'Web';
+
+    protected static string|BackedEnum|null $navigationIcon = 'bxs-message-detail';
 
     protected static ?string $navigationLabel = 'Contact';
 
@@ -35,7 +38,17 @@ class ContactResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Contact Us';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 4;
+
+    public static function canViewAny(): bool
+    {
+        return true; // Allow all authenticated users to view the list
+    }
+
+    public static function canCreate(): bool
+    {
+        return Gate::allows('Create:Contact');
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -72,31 +85,17 @@ class ContactResource extends Resource
                     ->alignment('center'),
                 TextColumn::make('created_at')
                     ->dateTime()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->alignment('center'),
                 TextColumn::make('updated_at')
                     ->dateTime()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->alignment('center'),
             ])
             ->filters([
                 //
             ])
-            ->headerActions([
-                CreateAction::make()
-                    ->label('Create Contact')
-                    ->successNotification(
-                        Notification::make()
-                            ->success()
-                            ->title('Contact created')
-                            ->body('The contact has been created successfully.')
-                    ),
-                ExportAction::make()
-                    ->exporter(ContactExporter::class)
-                    ->label('Export Contact'),
-            ])
+
             ->recordActions([
                 ViewAction::make()
                     ->button()
@@ -106,6 +105,7 @@ class ContactResource extends Resource
                     ->button()
                     ->color('warning')
                     ->size('lg')
+                    ->visible(fn (): bool => Gate::allows('Update:Contact'))
                     ->successNotification(
                         Notification::make()
                             ->success()
@@ -116,6 +116,7 @@ class ContactResource extends Resource
                     ->button()
                     ->color('danger')
                     ->size('lg')
+                    ->visible(fn (): bool => Gate::allows('Delete:Contact'))
                     ->successNotification(
                         Notification::make()
                             ->success()
@@ -126,6 +127,7 @@ class ContactResource extends Resource
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
+                        ->visible(fn (): bool => Gate::allows('Delete:Contact'))
                         ->successNotification(
                             Notification::make()
                                 ->success()

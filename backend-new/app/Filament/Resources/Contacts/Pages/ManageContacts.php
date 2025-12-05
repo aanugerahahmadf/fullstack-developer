@@ -6,6 +6,8 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\ExportAction;
 use App\Filament\Exports\ContactExporter;
 use Filament\Resources\Pages\ManageRecords;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Gate;
 use App\Filament\Resources\Contacts\ContactResource;
 
 class ManageContacts extends ManageRecords
@@ -15,11 +17,19 @@ class ManageContacts extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
-            //CreateAction::make()
-                //->label('Create Contact'),
-            //ExportAction::make()
-                //->exporter(ContactExporter::class)
-                //->label('Export Contact'),
+                CreateAction::make()
+                    ->visible(fn (): bool => Gate::allows('Create:Contact'))
+                    ->label('Create Contact')
+                    ->successNotification(
+                        Notification::make()
+                            ->success()
+                            ->title('Contact created')
+                            ->body('The contact has been created successfully.')
+                    ),
+                ExportAction::make()
+                    ->visible(fn (): bool => Gate::allows('Export:Contact'))
+                    ->exporter(ContactExporter::class)
+                    ->label('Export Contact'),
         ];
     }
 }

@@ -22,13 +22,16 @@ use Filament\Tables\Table;
 use UnitEnum;
 use Illuminate\Support\Facades\DB;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Gate;
 
 class BuildingResource extends Resource
 {
     protected static ?string $model = Building::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Playlist And Maps';
-
+    protected static string|UnitEnum|null $navigationGroup = 'Web';
+    
+    protected static string|BackedEnum|null $navigationIcon = 'govicon-building';
+    
     protected static ?string $navigationLabel = 'Building';
 
     protected static ?string $modelLabel = 'Building Management';
@@ -37,14 +40,62 @@ class BuildingResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function canViewAny(): bool
+    {
+        return true; // Allow all authenticated users to view the list
+    }
+
+    public static function canCreate(): bool
+    {
+        // Removed explicit Gate check to let policies/Gate interceptor handle it
+        return parent::canCreate();
+    }
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 TextInput::make('name')
                     ->required(),
-                TextInput::make('latitude'),
-                TextInput::make('longitude'),
+                TextInput::make('latitude')
+                    ->label('Latitude (φ) - Decimal Degrees')
+                    ->numeric()
+                    ->step(0.00000001)
+                    ->minValue(-90)
+                    ->maxValue(90)
+                    ->placeholder('e.g., -6.39240000')
+                    ->helperText('Enter latitude in decimal degrees. Range: -90 to 90. Precision: ±0.00000001° (±1.1mm)')
+                    ->rules(['nullable', 'numeric', 'between:-90,90'])
+                    ->validationMessages([
+                        'numeric' => 'Latitude must be a valid number',
+                        'between' => 'Latitude must be between -90 and 90 degrees',
+                    ])
+                    ->live()
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        if ($state !== null && is_numeric($state)) {
+                            $dms = \App\Utils\CoordinateConverter::decimalToDMS(floatval($state), true);
+                            // Could store DMS conversion if needed
+                        }
+                    }),
+                TextInput::make('longitude')
+                    ->label('Longitude (λ) - Decimal Degrees')
+                    ->numeric()
+                    ->step(0.00000001)
+                    ->minValue(-180)
+                    ->maxValue(180)
+                    ->placeholder('e.g., 108.38147000')
+                    ->helperText('Enter longitude in decimal degrees. Range: -180 to 180. Precision: ±0.00000001° (±1.1mm)')
+                    ->rules(['nullable', 'numeric', 'between:-180,180'])
+                    ->validationMessages([
+                        'numeric' => 'Longitude must be a valid number',
+                        'between' => 'Longitude must be between -180 and 180 degrees',
+                    ])
+                    ->live()
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        if ($state !== null && is_numeric($state)) {
+                            $dms = \App\Utils\CoordinateConverter::decimalToDMS(floatval($state), false);
+                            // Could store DMS conversion if needed
+                        }
+                    }),
                 TextInput::make('marker_icon_url')
                     ->label('Marker Icon URL')
                     ->placeholder('https://blade-ui-kit.com/blade-icons/govicon-building')
@@ -66,13 +117,27 @@ class BuildingResource extends Resource
                     ->searchable()
                     ->alignment('center'),
                 TextColumn::make('latitude')
+                    ->label('Latitude')
                     ->searchable()
                     ->toggleable()
-                    ->alignment('center'),
+                    ->alignment('center')
+                    ->formatStateUsing(fn ($state): string => \App\Utils\CoordinateConverter::formatCoordinate($state, 8))
+                    ->tooltip(function ($state, $record): string {
+                        if (!$state) return 'No latitude coordinate';
+                        $dms = \App\Utils\CoordinateConverter::decimalToDMS(floatval($state), true);
+                        return "Decimal: {$state}°\nDMS: {$dms}\nAccuracy: ±1.1mm";
+                    }),
                 TextColumn::make('longitude')
+                    ->label('Longitude')
                     ->searchable()
                     ->toggleable()
-                    ->alignment('center')                   ,
+                    ->alignment('center')
+                    ->formatStateUsing(fn ($state): string => \App\Utils\CoordinateConverter::formatCoordinate($state, 8))
+                    ->tooltip(function ($state, $record): string {
+                        if (!$state) return 'No longitude coordinate';
+                        $dms = \App\Utils\CoordinateConverter::decimalToDMS(floatval($state), false);
+                        return "Decimal: {$state}°\nDMS: {$dms}\nAccuracy: ±1.1mm";
+                    }),
                 TextColumn::make('marker_icon_url')
                     ->searchable()
                     ->toggleable()
@@ -82,31 +147,15 @@ class BuildingResource extends Resource
                     ->alignment('center'),
                 TextColumn::make('created_at')
                     ->dateTime()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->alignment('center'),
                 TextColumn::make('updated_at')
                     ->dateTime()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->alignment('center'),
             ])
             ->filters([
                 //
-            ])
-            ->headerActions([
-                CreateAction::make()
-                    ->label('Create Building')
-                    ->successNotification(
-                        Notification::make()
-                            ->success()
-                            ->title('Building created')
-                            ->body('The building has been created successfully.')
-                    ),
-                ExportAction::make()
-                    ->exporter(BuildingExporter::class)
-                    ->label('Export Building'),
-
             ])
             ->recordActions([
                 ViewAction::make()
@@ -117,6 +166,7 @@ class BuildingResource extends Resource
                     ->button()
                     ->color('warning')
                     ->size('lg')
+                    ->visible(fn (): bool => Gate::allows('Update:Building'))
                     ->successNotification(
                         Notification::make()
                             ->success()
@@ -127,6 +177,7 @@ class BuildingResource extends Resource
                     ->button()
                     ->color('danger')
                     ->size('lg')
+                    ->visible(fn (): bool => Gate::allows('Delete:Building'))
                     ->successNotification(
                         Notification::make()
                             ->success()
@@ -137,6 +188,7 @@ class BuildingResource extends Resource
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
+                        ->visible(fn (): bool => Gate::allows('Delete:Building'))
                         ->successNotification(
                             Notification::make()
                                 ->success()

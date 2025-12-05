@@ -7,6 +7,7 @@ use Filament\Widgets\ChartWidget;
 
 class StreamingPerformanceChart extends ChartWidget
 {
+    protected static ?int $sort = 3;
     protected ?string $heading = 'Streaming Performance';
 
     protected function getData(): array
@@ -20,19 +21,19 @@ class StreamingPerformanceChart extends ChartWidget
                 'datasets' => [
                     [
                         'label' => 'Average FPS',
-                        'data' => [29, 30, 28, 31, 30, 29, 30],
+                        'data' => [28, 29, 27, 30, 28, 29, 27],
                         'borderColor' => '#8B5CF6',
                         'fill' => false,
                         'tension' => 0.4,
-                        'pointRadius' => 3,
+                        'pointRadius' => 0,
                     ],
                     [
                         'label' => 'Latency (ms)',
-                        'data' => [120, 115, 130, 110, 125, 140, 115],
+                        'data' => [110, 115, 120, 105, 110, 115, 120],
                         'borderColor' => '#F59E0B',
                         'fill' => false,
                         'tension' => 0.4,
-                        'pointRadius' => 3,
+                        'pointRadius' => 0,
                     ],
                 ],
                 'labels' => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -43,24 +44,19 @@ class StreamingPerformanceChart extends ChartWidget
         $baseFps = min(30, max(20, 30 - ($totalCctvs / 10))); // Decrease FPS as more CCTVs are added
         $baseLatency = max(80, min(200, 100 + ($totalCctvs * 2))); // Increase latency as more CCTVs are added
 
-        // Generate weekly data with realistic variations and smooth waves
+        // Generate weekly data with realistic variations
         $fpsData = [];
         $latencyData = [];
         $labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-        // Create smooth wave patterns using sine functions for more natural-looking curves
+        // Create typical line chart data with gradual variations
         for ($i = 0; $i < 7; $i++) {
-            // Create wave patterns with different frequencies and phases
-            $fpsWave = sin($i * 0.9) * 2; // ±2 FPS variation
-            $latencyWave = sin($i * 1.1 + 2) * 15; // ±15ms variation with phase shift
-            
-            // Add random variation on top of wave patterns
-            $fpsVariation = rand(-1, 1);
+            // Add random but realistic variations
+            $fpsVariation = rand(-2, 2);
             $latencyVariation = rand(-10, 10);
             
-            // Combine wave patterns with random variations
-            $fpsData[] = max(15, min(35, $baseFps + $fpsWave + $fpsVariation));
-            $latencyData[] = max(50, min(300, $baseLatency + $latencyWave + $latencyVariation));
+            $fpsData[] = max(15, min(35, $baseFps + $fpsVariation));
+            $latencyData[] = max(50, min(300, $baseLatency + $latencyVariation));
         }
 
         return [
@@ -71,7 +67,7 @@ class StreamingPerformanceChart extends ChartWidget
                     'borderColor' => '#8B5CF6',
                     'fill' => false,
                     'tension' => 0.4, // Smooth curves
-                    'pointRadius' => 3,
+                    'pointRadius' => 0,
                 ],
                 [
                     'label' => 'Latency (ms)',
@@ -79,7 +75,7 @@ class StreamingPerformanceChart extends ChartWidget
                     'borderColor' => '#F59E0B',
                     'fill' => false,
                     'tension' => 0.4, // Smooth curves
-                    'pointRadius' => 3,
+                    'pointRadius' => 0,
                 ],
             ],
             'labels' => $labels,
