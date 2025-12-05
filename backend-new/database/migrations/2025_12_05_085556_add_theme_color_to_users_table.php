@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string(config('filament-edit-profile.theme_color_column', 'theme_color'))->nullable();
-        });
+        // Check if the column doesn't already exist before adding it
+        if (!Schema::hasColumn('users', config('filament-edit-profile.theme_color_column', 'theme_color'))) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string(config('filament-edit-profile.theme_color_column', 'theme_color'))->nullable();
+            });
+        }
     }
 
     /**
@@ -21,8 +24,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(config('filament-edit-profile.theme_color_column', 'theme_color'));
-        });
+        // Check if the column exists before dropping it
+        if (Schema::hasColumn('users', config('filament-edit-profile.theme_color_column', 'theme_color'))) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn(config('filament-edit-profile.theme_color_column', 'theme_color'));
+            });
+        }
     }
 };

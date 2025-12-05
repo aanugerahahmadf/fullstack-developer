@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->json('custom_fields')->nullable();
-        });
+        // Check if the column doesn't already exist before adding it
+        if (!Schema::hasColumn('users', 'custom_fields')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->json('custom_fields')->nullable();
+            });
+        }
     }
 
     /**
@@ -21,8 +24,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('custom_fields');
-        });
+        // Check if the column exists before dropping it
+        if (Schema::hasColumn('users', 'custom_fields')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('custom_fields');
+            });
+        }
     }
 };
