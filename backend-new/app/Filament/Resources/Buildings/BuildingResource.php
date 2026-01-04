@@ -28,7 +28,7 @@ class BuildingResource extends Resource
 {
     protected static ?string $model = Building::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Web';
+    protected static string|UnitEnum|null $navigationGroup = 'CRUD For All Pages';
     
     protected static string|BackedEnum|null $navigationIcon = 'govicon-building';
     
@@ -57,18 +57,7 @@ class BuildingResource extends Resource
                 TextInput::make('name')
                     ->required(),
                 TextInput::make('latitude')
-                    ->label('Latitude (φ) - Decimal Degrees')
-                    ->numeric()
-                    ->step(0.00000001)
-                    ->minValue(-90)
-                    ->maxValue(90)
-                    ->placeholder('e.g., -6.39240000')
-                    ->helperText('Enter latitude in decimal degrees. Range: -90 to 90. Precision: ±0.00000001° (±1.1mm)')
-                    ->rules(['nullable', 'numeric', 'between:-90,90'])
-                    ->validationMessages([
-                        'numeric' => 'Latitude must be a valid number',
-                        'between' => 'Latitude must be between -90 and 90 degrees',
-                    ])
+                    ->label('Latitude Cordinate')
                     ->live()
                     ->afterStateUpdated(function ($state, callable $set) {
                         if ($state !== null && is_numeric($state)) {
@@ -77,18 +66,7 @@ class BuildingResource extends Resource
                         }
                     }),
                 TextInput::make('longitude')
-                    ->label('Longitude (λ) - Decimal Degrees')
-                    ->numeric()
-                    ->step(0.00000001)
-                    ->minValue(-180)
-                    ->maxValue(180)
-                    ->placeholder('e.g., 108.38147000')
-                    ->helperText('Enter longitude in decimal degrees. Range: -180 to 180. Precision: ±0.00000001° (±1.1mm)')
-                    ->rules(['nullable', 'numeric', 'between:-180,180'])
-                    ->validationMessages([
-                        'numeric' => 'Longitude must be a valid number',
-                        'between' => 'Longitude must be between -180 and 180 degrees',
-                    ])
+                    ->label('Longitude Cordinate')
                     ->live()
                     ->afterStateUpdated(function ($state, callable $set) {
                         if ($state !== null && is_numeric($state)) {
@@ -97,7 +75,7 @@ class BuildingResource extends Resource
                         }
                     }),
                 TextInput::make('marker_icon_url')
-                    ->label('Marker Icon URL')
+                    ->label('Marker Icon')
                     ->placeholder('https://blade-ui-kit.com/blade-icons/govicon-building')
                     ->default('https://blade-ui-kit.com/blade-icons/govicon-building'),
             ]);

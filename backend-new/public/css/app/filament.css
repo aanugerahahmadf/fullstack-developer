@@ -3,25 +3,23 @@
    ================================ */
 .fi-topbar, 
 .fi-topbar > div {
-    height: 60px !important;      /* Ubah sesuai kebutuhan */
-    min-height: 60px !important;
-    max-height: 60px !important;
+    height: 70px !important;      /* Ubah sesuai kebutuhan */
+    min-height: 70px !important;
+    max-height: 70px !important;
 }
-
 
 /* ================================
    FORCE LOGO SIZE (IMG)
    ================================ */
 .fi-logo img,
-.fi-topbar > div .fi-logo img,
-.fi-topbar-item img,
-.fi-topbar-brand img,
+.fi-sidebar-brand img,
 .custom-filament-logo {
-    height: 9.5rem !important;      /* Ubah ukuran logo */
+    height: 8rem !important;
     width: auto !important;
-    max-height: 9.5rem !important;
+    max-height: 8rem !important;
     object-fit: contain !important;
     display: block !important;
+    margin: 1rem auto !important;
 }
 
 /* ================================
@@ -29,27 +27,12 @@
    ================================ */
 /* Remove conflicting CSS rules - using picture element instead */
 
-
 /* ================================
    REMOVE FILAMENT DEFAULT SIZING
    ================================ */
-.fi-logo,
-.fi-topbar-item,
-.fi-topbar-brand {
+.fi-logo {
     height: auto !important;
     max-height: none !important;
-}
-
-
-/* ================================
-   FIX ALIGNMENT LOGO DALAM NAVBAR
-   ================================ */
-.fi-topbar .fi-logo,
-.fi-topbar-brand {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0 !important;
 }
 
 /* ================================
@@ -59,23 +42,43 @@
     background-color: #000000 !important;
 }
 
-
-/* ================================
-   FIX DOUBLE-WRAPPER (Filament 3.2+)
-   ================================ */
-.fi-topbar-item > div > img {
-    height: 9.5rem !important;
-    width: auto !important;
-}
+/* ================================================
+   FILAMENT LOGO CUSTOM STYLE
+   ================================================ */
 
 /* ================================
    SIDEBAR LOGO SPECIFIC STYLES
    ================================ */
-.fi-sidebar .custom-filament-logo {
+.fi-sidebar .custom-filament-logo,
+.fi-sidebar-brand img {
     height: 9.5rem !important;
     width: auto !important;
     max-height: 9.5rem !important;
     object-fit: contain !important;
     display: block !important;
-    margin: 1rem auto !important;
+    margin: 1rem 0 !important;
+    z-index: 1000 !important;
+}
+
+/* Handle logo when sidebar is collapsed */
+.fi-sidebar:not(.fi-sidebar-open) .custom-filament-logo,
+.fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-brand img {
+    display: none !important;
+}
+
+.fi-sidebar.fi-sidebar-open .custom-filament-logo,
+.fi-sidebar.fi-sidebar-open .fi-sidebar-brand img {
+    display: block !important;
+}
+
+/* Supaya smooth saat pindah Light → Dark */
+.dark .custom-filament-logo,
+.custom-filament-logo {
+    transition: opacity 0.25s ease-in-out,
+                transform 0.25s ease-in-out;
+}
+
+/* Hover effect opsional */
+.custom-filament-logo:hover {
+    transform: scale(1.03);
 }

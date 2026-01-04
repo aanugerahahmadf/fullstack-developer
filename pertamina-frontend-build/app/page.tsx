@@ -421,7 +421,7 @@ export default function Home() {
                 })()}
               </h3>
             </div>
-            <div className="h-64">
+            <div className="h-64 md:h-80">
               {chartLoading ? (
                 <div className="w-full h-full flex items-center justify-center">
                   <p className="text-white font-semibold">Loading chart data...</p>
@@ -431,10 +431,10 @@ export default function Home() {
                   <LineChart
                     data={productionTrends}
                     margin={{
-                      top: 5,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
+                      top: 10,
+                      right: 10,
+                      left: 0,
+                      bottom: 0,
                     }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
@@ -442,11 +442,26 @@ export default function Home() {
                       dataKey="date" 
                       stroke="#ffffff80" 
                       tick={{ fill: '#ffffff80' }}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return `${date.getDate()}/${date.getMonth() + 1}`;
+                      }}
                     />
+                    {/* Left Axis for Volume (Thousands) */}
                     <YAxis 
-                      stroke="#ffffff80" 
-                      tick={{ fill: '#ffffff80' }}
-                      domain={[0, 'dataMax + 10']}
+                      yAxisId="left"
+                      stroke="#10b981" 
+                      tick={{ fill: '#10b981' }}
+                      label={{ value: 'Volume', angle: -90, position: 'insideLeft', fill: '#10b981' }}
+                    />
+                    {/* Right Axis for Percentages/Speed (0-100) */}
+                    <YAxis 
+                      yAxisId="right"
+                      orientation="right"
+                      stroke="#3b82f6" 
+                      tick={{ fill: '#3b82f6' }}
+                      domain={[0, 100]}
+                      label={{ value: 'Rate / Speed', angle: 90, position: 'insideRight', fill: '#3b82f6' }}
                     />
                     <Tooltip 
                       contentStyle={{ 
@@ -457,96 +472,52 @@ export default function Home() {
                       }} 
                       formatter={(value, name) => {
                         const nameStr = String(name);
-                        if (nameStr === 'traffic_volume') {
+                        if (nameStr === 'Traffic Volume') {
                           return [value.toLocaleString(), 'Vehicles'];
-                        } else if (nameStr === 'average_speed') {
+                        } else if (nameStr.includes('Speed')) {
                           return [`${value} km/h`, 'Avg Speed'];
-                        } else if (nameStr === 'incidents') {
-                          return [value, 'Incidents'];
-                        } else if (nameStr === 'congestion_index') {
-                          return [`${value}%`, 'Congestion'];
-                        } else if (nameStr === 'signal_changes') {
-                          return [value, 'Signal Changes'];
-                        } else if (nameStr === 'green_wave_efficiency') {
-                          return [`${value}%`, 'Green Wave'];
                         } else {
-                          return [value, 'Units']
+                          return [value, nameStr];
                         }
                       }}
-                      labelStyle={{ color: '#ffffff' }}
                     />
                     <Legend />
                     <Line
+                      yAxisId="left"
                       type="monotone"
                       dataKey="traffic_volume"
                       stroke="#10b981"
                       strokeWidth={3}
                       name="Traffic Volume"
-                      animationDuration={800}
-                      animationEasing="ease-out"
-                      isAnimationActive={true}
                       dot={false}
-                      activeDot={false}
                     />
                     <Line
+                      yAxisId="right"
                       type="monotone"
                       dataKey="average_speed"
                       stroke="#3b82f6"
-                      strokeWidth={3}
+                      strokeWidth={2}
                       name="Avg Speed (km/h)"
-                      animationDuration={1200}
-                      animationEasing="ease-out"
-                      isAnimationActive={true}
                       dot={false}
-                      activeDot={false}
                     />
                     <Line
+                      yAxisId="right"
                       type="monotone"
                       dataKey="congestion_index"
                       stroke="#f59e0b"
-                      strokeWidth={3}
+                      strokeWidth={2}
                       name="Congestion Index"
-                      animationDuration={1000}
-                      animationEasing="ease-out"
-                      isAnimationActive={true}
                       dot={false}
-                      activeDot={false}
                     />
+                    {/* Hide less important lines to reduce clutter, or keep on right axis */}
                     <Line
-                      type="monotone"
-                      dataKey="incidents"
-                      stroke="#ef4444"
-                      strokeWidth={3}
-                      name="Incidents"
-                      animationDuration={900}
-                      animationEasing="ease-out"
-                      isAnimationActive={true}
-                      dot={false}
-                      activeDot={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="signal_changes"
-                      stroke="#8b5cf6"
-                      strokeWidth={3}
-                      name="Signal Changes"
-                      animationDuration={1100}
-                      animationEasing="ease-out"
-                      isAnimationActive={true}
-                      dot={false}
-                      activeDot={false}
-                    />
-                    <Line
+                      yAxisId="right"
                       type="monotone"
                       dataKey="green_wave_efficiency"
                       stroke="#ec4899"
-                      strokeWidth={3}
-                      name="Green Wave Efficiency"
-                      animationDuration={1300}
-                      animationEasing="ease-out"
-                      isAnimationActive={true}
+                      strokeWidth={2}
+                      name="Green Wave Eff."
                       dot={false}
-                      activeDot={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -561,14 +532,14 @@ export default function Home() {
           {/* Unit Performance Chart */}
           <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
             <h3 className="text-lg font-semibold text-white mb-6 text-center">Unit Performance</h3>
-            <div className="h-64">
+            <div className="h-64 md:h-80">
               {chartLoading ? (
                 <div className="w-full h-full flex items-center justify-center">
                   <p className="text-white font-semibold">Loading chart data...</p>
                 </div>
               ) : unitPerformance && unitPerformance.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
+                  <BarChart
                     data={unitPerformance}
                     margin={{
                       top: 20,
@@ -576,86 +547,54 @@ export default function Home() {
                       left: 20,
                       bottom: 20,
                     }}
+                    barGap={0}
+                    barCategoryGap="20%"
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" vertical={false} />
                     <XAxis 
                       dataKey="unit" 
                       stroke="#ffffff80" 
                       tick={{ fill: '#ffffff80' }}
-                      angle={-45}
-                      textAnchor="end"
-                      height={60}
+                      // Removed angle rotation for better readability if labels fit
+                      height={30}
                     />
                     <YAxis 
                       stroke="#ffffff80" 
                       tick={{ fill: '#ffffff80' }}
-                      domain={[0, 'dataMax + 10']}
+                      domain={[0, 100]}
                       tickFormatter={(value) => `${value}%`}
                     />
                     <Tooltip 
+                      cursor={{ fill: 'transparent' }}
                       contentStyle={{ 
                         backgroundColor: '#1e293b', 
                         borderColor: '#ffffff20', 
-                        borderRadius: '0.5rem',
-                        color: 'white'
-                      }} 
-                      formatter={(value, name) => {
-                        // Format tooltip based on metric type
-                        const nameStr = String(name);
-                        if (nameStr === 'average_delay') {
-                          return [`${value} seconds`, 'Avg Delay'];
-                        } else if (nameStr === 'queue_length') {
-                          return [`${value} vehicles`, 'Queue Length'];
-                        } else if (nameStr === 'incident_rate') {
-                          return [`${value} incidents/hr`, 'Incident Rate'];
-                        } else {
-                          return [`${value}%`, nameStr.replace('_', ' ')]
-                        }
+                        color: 'white' 
                       }}
-                      labelStyle={{ color: '#ffffff' }}
-                      cursor={{ fill: '#ffffff10' }}
                     />
-                    <Legend 
-                      verticalAlign="top"
-                      height={40}
-                    />
-                    <Line
-                      type="monotone"
+                    <Legend verticalAlign="top" height={36}/>
+                    <Bar
                       dataKey="efficiency"
-                      stroke="#3b82f6"
-                      strokeWidth={3}
                       name="System Efficiency"
-                      animationDuration={800}
-                      animationEasing="ease-out"
-                      isAnimationActive={true}
-                      dot={false}
-                      activeDot={false}
+                      fill="#3b82f6"
+                      radius={[4, 4, 0, 0]}
+                      label={{ position: 'top', fill: 'white', formatter: (val: any) => `${val}%` }}
                     />
-                    <Line
-                      type="monotone"
+                    <Bar
                       dataKey="traffic_density"
-                      stroke="#10b981"
-                      strokeWidth={3}
                       name="Traffic Density"
-                      animationDuration={1200}
-                      animationEasing="ease-out"
-                      isAnimationActive={true}
-                      dot={false}
-                      activeDot={false}
+                      fill="#10b981"
+                      radius={[4, 4, 0, 0]}
+                      label={{ position: 'top', fill: 'white', formatter: (val: any) => `${val}%` }}
                     />
-                    <Line
-                      type="monotone"
+                    <Bar
                       dataKey="signal_optimization"
-                      stroke="#f59e0b"
-                      strokeWidth={3}
                       name="Signal Optimization"
-                      animationDuration={1000}
-                      animationEasing="ease-out"
-                      isAnimationActive={true}
-                      dot={false}
-                      activeDot={false}
+                      fill="#f59e0b"
+                      radius={[4, 4, 0, 0]}
+                      label={{ position: 'top', fill: 'white', formatter: (val: any) => `${val}%` }}
                     />
-                  </LineChart>
+                  </BarChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

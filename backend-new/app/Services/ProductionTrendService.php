@@ -84,9 +84,15 @@ class ProductionTrendService extends BaseService
                 // Generate ATCS metrics based on infrastructure
                 $trafficVolume = $cctvCount * mt_rand(1000, 5000);
                 $averageSpeed = mt_rand(30, 80);
-                $incidents = mt_rand(0, max(1, floor($cctvCount / 10)));
+                
+                // Incidents calculation now heavily reliant on Room density (simulation)
+                $incidents = mt_rand(0, max(1, floor(($cctvCount + $roomCount) / 5)));
+                
                 $congestionIndex = mt_rand(20, 80);
+                
+                // Signal changes correlated to number of Buildings (intersections)
                 $signalChanges = $buildingCount * mt_rand(50, 200);
+                
                 $greenWaveEfficiency = mt_rand(60, 95);
                 
                 $trends[] = [

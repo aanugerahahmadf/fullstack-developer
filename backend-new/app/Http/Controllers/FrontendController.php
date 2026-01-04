@@ -40,6 +40,12 @@ class FrontendController extends Controller
             return app()->handle($request);
         }
 
+        // SPECIAL FIX: Redirect Next.js Hot Module Replacement (HMR) directly to Port 3000
+        // This prevents the "Loading..." loop caused by PHP trying to proxy an infinite stream
+        if (str_contains($request->path(), 'webpack-hmr')) {
+            return redirect('http://127.0.0.1:3000/' . $request->path(), 307);
+        }
+
         // Proxy the request to the Next.js frontend running on port 3000
         $url = "http://127.0.0.1:3000/" . ltrim($request->path(), '/');
 
@@ -119,7 +125,7 @@ class FrontendController extends Controller
                     // Modify CSP to allow connections to the API
                     $value = str_replace(
                         "connect-src 'self'",
-                        "connect-src 'self' http://127.0.0.1:8000",
+                        "connect-src 'self' http://127.0.0.1:8000 ws://127.0.0.1:3000 http://127.0.0.1:3000",
                         $value
                     );
                 }
@@ -133,6 +139,33 @@ class FrontendController extends Controller
         // Add performance headers
         $laravelResponse->header('X-Proxy-Latency', '0');
         $laravelResponse->header('X-Content-Type-Options', 'nosniff');
+
+        // FIX HMR: Inject script to redirect WebSocket connections to port 3000
+        if (stripos($response, '</head>') !== false) {
+            $hmrFixScript = <<<'SCRIPT'
+<script>
+(function() {
+    // Override WebSocket to redirect HMR connections to port 3000
+    const OriginalWebSocket = window.WebSocket;
+    window.WebSocket = function(url, protocols) {
+        // If this is an HMR connection, redirect to port 3000
+        if (url.includes('webpack-hmr') || url.includes('_next')) {
+            url = url.replace('ws://127.0.0.1:8000', 'ws://127.0.0.1:3000');
+            url = url.replace('ws://localhost:8000', 'ws://localhost:3000');
+        }
+        return new OriginalWebSocket(url, protocols);
+    };
+    // Copy static properties
+    window.WebSocket.CONNECTING = OriginalWebSocket.CONNECTING;
+    window.WebSocket.OPEN = OriginalWebSocket.OPEN;
+    window.WebSocket.CLOSING = OriginalWebSocket.CLOSING;
+    window.WebSocket.CLOSED = OriginalWebSocket.CLOSED;
+})();
+</script>
+SCRIPT;
+            $response = str_replace('</head>', $hmrFixScript . '</head>', $response);
+            $laravelResponse->setContent($response);
+        }
 
         return $laravelResponse;
     }

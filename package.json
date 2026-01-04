@@ -4,9 +4,9 @@
   "description": "Fullstack Pertamina Application with Laravel Backend and Next.js Frontend",
   "main": "start-app.js",
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "next build --webpack",
-    "start": "next start",
+    "dev": "npm run dev --prefix pertamina-frontend-build",
+    "build": "npm run build --prefix pertamina-frontend-build",
+    "start": "npm run start --prefix pertamina-frontend-build",
     "complete": "node start-fullstack.js",
     "structured": "node start-fullstack.js",
     "test": "node --experimental-fetch test-api-connection.js",

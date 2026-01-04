@@ -26,7 +26,7 @@ export default function RootLayout({
       </head>
       <body className={`${_geist.className} antialiased flex flex-col min-h-screen`}>
         <Navbar />
-        <main className="flex-grow w-full">
+        <main className="flex-grow w-full pt-16 pb-12">
           {children}
         </main>
         <Footer />

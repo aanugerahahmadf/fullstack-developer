@@ -9,6 +9,8 @@ const nextConfig = {
   output: 'standalone',
   outputFileTracingRoot: __dirname,
   reactStrictMode: false,
+  // Configure asset prefix for Laravel proxy compatibility
+  assetPrefix: process.env.NODE_ENV === 'production' ? undefined : '',
   // Use webpack for better compatibility
   experimental: {
     optimizeCss: true,

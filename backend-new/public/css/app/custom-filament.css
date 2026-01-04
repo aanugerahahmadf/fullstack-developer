@@ -3,9 +3,9 @@
    ================================ */
 .fi-topbar, 
 .fi-topbar > div {
-    height: 65px !important;      /* Ubah sesuai kebutuhan */
-    min-height: 65px !important;
-    max-height: 65px !important;
+    height: 70px !important;      /* Ubah sesuai kebutuhan */
+    min-height: 70px !important;
+    max-height: 70px !important;
 }
 
 /* ================================
@@ -14,9 +14,9 @@
 .fi-logo img,
 .fi-sidebar-brand img,
 .custom-filament-logo {
-    height: 10rem !important;
+    height: 8rem !important;
     width: auto !important;
-    max-height: 10rem !important;
+    max-height: 8rem !important;
     object-fit: contain !important;
     display: block !important;
     margin: 1rem auto !important;
@@ -33,13 +33,6 @@
 .fi-logo {
     height: auto !important;
     max-height: none !important;
-}
-
-/* ================================
-   DARK MODE NAVBAR BACKGROUND
-   ================================ */
-.fi-topbar:where(.dark, .dark *) {
-    background-color: #000000 !important;
 }
 
 /* ================================================
@@ -81,4 +74,18 @@
 /* Hover effect opsional */
 .custom-filament-logo:hover {
     transform: scale(1.03);
+}
+
+/* ================================
+   AUTHENTICATION PAGE LOGO ADJUSTMENT
+   ================================ */
+.fi-simple-header .custom-filament-logo,
+.fi-simple-header .fi-logo img {
+    height: 9.5rem !important;
+    margin: 0.1rem auto !important;
+}
+
+.fi-simple-header-heading {
+    margin-top: 0.1rem !important;
+    margin-bottom: 0.1rem !important;
 }

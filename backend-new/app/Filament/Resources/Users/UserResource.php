@@ -6,6 +6,7 @@ use UnitEnum;
 use App\Filament\Resources\Users\Pages\ManageUsers;
 use App\Models\User;
 use BackedEnum;
+use Spatie\Permission\Models\Role;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -13,7 +14,9 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Storage;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -26,7 +29,7 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Roles User';
+    protected static string|UnitEnum|null $navigationGroup = 'All Roles For User';
 
     protected static string|BackedEnum|null $navigationIcon = 'bxs-user-account';
 
@@ -49,25 +52,35 @@ class UserResource extends Resource
             ->components([
                 TextInput::make('name')
                     ->label('Full name')
-                    ->required(),
+                    ->required()
+                    ->unique('users', 'name', ignoreRecord: true),
                 TextInput::make('username')
-                    ->label('Username'),
+                    ->label('Username')
+                    ->unique('users', 'username', ignoreRecord: true),
                 TextInput::make('email')
                     ->label('Email address')
                     ->email()
-                    ->required(),
+                    ->required()
+                    ->unique('users', 'email', ignoreRecord: true),
                 TextInput::make('password')
                     ->label('Password')
                     ->revealable()
                     ->password()
                     ->required(),
-                FileUpload::make('avatar_url')
-                    ->label('Avatar')
-                    ->image()
-                    ->directory('avatars')
-                    ->visibility('public')
-                    ->maxSize(1024)
-                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/gif'])
+                 FileUpload::make('avatar_url')
+                     ->label('Avatar')
+                     ->image()
+                     ->directory('avatars')
+                     ->visibility('public')
+                     ->maxSize(102400000)
+                     ->acceptedFileTypes([
+                            'image/jpeg', 'image/png', 
+                            'image/gif', 'image/webp', 
+                            'image/svg+xml', 'application/pdf', 
+                            'video/mp4', 'video/avi', 
+                            'video/mov', 'audio/mpeg', 
+                            'audio/wav', 'text/plain',                                        
+                            'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
                     ->imageEditor(),
             ]);
     }
@@ -80,7 +93,7 @@ class UserResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return $table->modifyQueryUsing(fn ($query) => $query->with('roles'))
             ->columns([
                 TextColumn::make('position')
                     ->label('ID')
@@ -97,7 +110,8 @@ class UserResource extends Resource
                     ->imageHeight(40)
                     ->circular()
                     ->searchable()
-                    ->alignment('center'),
+                    ->alignment('center')
+                    ->getStateUsing(fn ($record) => $record->avatar_url ? Storage::url($record->avatar_url) : null),
                 TextColumn::make('username')
                     ->label('Username')
                     ->searchable()
@@ -110,11 +124,20 @@ class UserResource extends Resource
                     ->label('Password')
                     ->searchable()
                     ->alignment('center'),
+                TextColumn::make('roles.name')
+                    ->label('Roles')
+                    ->badge()
+                    ->separator(',')
+                    ->formatStateUsing(fn (string $state): string => ucwords(str_replace('_', ' ', $state)))
+                    ->searchable()
+                    ->alignment('center'),
                 TextColumn::make('created_at')
                     ->label('Created at')
+                    ->dateTime()
                     ->alignment('center')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label('Updated at')
                     ->dateTime()
                     ->alignment('center')
                     ->toggleable(isToggledHiddenByDefault: true),

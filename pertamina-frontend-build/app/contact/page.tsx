@@ -97,7 +97,7 @@ export default function ContactPage() {
       {/* Header */}
       <div className="pt-4 pb-6 px-4">
         <div className="flex justify-center items-center gap-4">
-          <h1 className="text-4xl md:text-5xl font-semibold text-white text-center">Contact</h1>
+          <h1 className="text-4xl md:text-5xl font-semibold text-white text-center">Contact Us</h1>
         </div>
       </div>
 

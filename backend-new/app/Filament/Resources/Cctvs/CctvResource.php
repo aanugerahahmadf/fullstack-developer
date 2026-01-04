@@ -30,7 +30,7 @@ class CctvResource extends Resource
 {
     protected static ?string $model = Cctv::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Web';
+    protected static string|UnitEnum|null $navigationGroup = 'CRUD For All Pages';
 
     protected static string|BackedEnum|null $navigationIcon = 'fluentui-camera-dome-28';
 

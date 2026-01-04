@@ -12,7 +12,7 @@ Route::get('/images/{any}', function ($any) {
     }
 
     // Also check in the frontend public directory
-    $frontendPath = base_path('v0-pertamina-frontend-build/public/images/' . $any);
+    $frontendPath = base_path('pertamina-frontend-build/public/images/' . $any);
     if (File::exists($frontendPath)) {
         return response()->file($frontendPath);
     }

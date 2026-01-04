@@ -29,7 +29,7 @@ class RoomResource extends Resource
 {
     protected static ?string $model = Room::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Web';
+    protected static string|UnitEnum|null $navigationGroup = 'CRUD For All Pages';
 
     protected static string|BackedEnum|null $navigationIcon = 'gmdi-meeting-room';
 

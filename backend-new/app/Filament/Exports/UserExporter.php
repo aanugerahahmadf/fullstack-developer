@@ -18,15 +18,13 @@ class UserExporter extends Exporter
             ExportColumn::make('id')
                 ->label('ID'),
             ExportColumn::make('name'),
+            ExportColumn::make('avatar_url'),
             ExportColumn::make('username'),
             ExportColumn::make('email'),
-            ExportColumn::make('email_verified_at'),
+            ExportColumn::make('password'),
+            ExportColumn::make('roles.name'),
             ExportColumn::make('created_at'),
             ExportColumn::make('updated_at'),
-            ExportColumn::make('avatar_url'),
-            ExportColumn::make('custom_fields'),
-            ExportColumn::make('locale'),
-            ExportColumn::make('theme_color'),
         ];
     }
 

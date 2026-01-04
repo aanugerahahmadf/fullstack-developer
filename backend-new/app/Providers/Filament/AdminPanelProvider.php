@@ -27,6 +27,7 @@ use App\Filament\Pages\Auth\Login;
 use App\Livewire\UsernameComponent;
 use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
 use Joaopaulolndev\FilamentEditProfile\Pages\EditProfilePage;
+use Filament\View\PanelsRenderHook;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -41,29 +42,34 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(fn () => view('vendor.filament.components.sidebar.brand'))
             ->darkModeBrandLogo(fn () => view('vendor.filament.components.sidebar.brand-dark'))
             ->assets([
-                new Css('custom-filament-css', resource_path('css/filament.css')),
+                new Css('custom-filament', resource_path('css/filament.css')),
             ])
             ->topbar(true)
             ->colors([
                 'primary' => Color::Red,
             ])
+            ->renderHook(
+                PanelsRenderHook::FOOTER,
+                fn () => view('filament.footer'),
+            )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
-            ->pages([
-                Dashboard::class,
-            ])
+            // ->pages([
+            //     Dashboard::class,
+            // ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
 
             ])
+            ->font('Inter')
             //->sidebarFullyCollapsibleOnDesktop()
             ->topNavigation()
             ->navigationGroups([
-                // NavigationGroup::make()
-                //     ->label('Dashboard'),
+                NavigationGroup::make()
+                    ->label('Dashboard'),
                     // ->collapsed(),
                 NavigationGroup::make()
-                    ->label('Roles User'),
+                    ->label('All Roles For User'),
                     // ->collapsed(),
                     // ->icon('zondicon-shield'),
                 // NavigationGroup::make()
@@ -71,7 +77,7 @@ class AdminPanelProvider extends PanelProvider
                 //     ->icon('bxs-user-account')
                 //     ->collapsed(),
                 NavigationGroup::make()
-                    ->label('Web'),
+                    ->label('CRUD For All Pages'),
                     // ->collapsed(),
                     // ->icon('bxs-map-pin')
                 // NavigationGroup::make()
@@ -124,7 +130,7 @@ class AdminPanelProvider extends PanelProvider
                     ->shouldShowAvatarForm(
                         value: true,
                         directory: 'avatars', // image will be stored in 'storage/app/public/avatars
-                        rules: 'mimes:jpeg,png|max:51200' // only accept jpeg and png files with a maximum size of 50MB (51200 KB)
+                        rules: 'mimes:jpeg,png|max:102400000' // only accept jpeg and png files with a maximum size of 100GB (102400000 KB)
                     )
                     ->customProfileComponents([
                         UsernameComponent::class,

@@ -28,11 +28,11 @@ class CctvRepository extends BaseRepository
         $cctv = $this->find($id);
         if ($cctv) {
             // Start the actual stream conversion by calling the streaming server
-            $streamUrl = 'http://127.0.0.1:8000/live/' . $id . '/index.m3u8';
+            $streamUrl = 'http://127.0.0.1:8001/live/' . $id . '/index.m3u8';
 
             try {
                 // Make an API call to the streaming server to start the stream with the actual RTSP URL
-                $response = Http::timeout(10)->post('http://127.0.0.1:3000/api/start-stream/' . $id, [
+                $response = Http::timeout(10)->post('http://127.0.0.1:3001/api/start-stream/' . $id, [
                     'rtsp_url' => $cctv->ip_rtsp_url
                 ]);
 

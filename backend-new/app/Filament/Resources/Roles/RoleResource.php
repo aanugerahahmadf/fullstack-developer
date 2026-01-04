@@ -32,6 +32,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Filament\Forms\Components\FileUpload;
 use UnitEnum;
 use BackedEnum;
 
@@ -47,7 +49,7 @@ class RoleResource extends Resource
     protected static ?string $recordTitleAttribute = 'name';
 
     // Explicitly set navigation group
-    protected static string|UnitEnum|null $navigationGroup = 'Roles User';
+    protected static string|UnitEnum|null $navigationGroup = 'All Roles For User';
 
     protected static string|BackedEnum|null $navigationIcon = 'zondicon-shield';
 
@@ -79,20 +81,57 @@ class RoleResource extends Resource
                         Section::make()
                             ->schema([
                                 TextInput::make('name')
-                                    ->label('Role Name')
+                                    ->label('Roles')
                                     ->required()
-                                    ->maxLength(255)
-                                    ->unique(ignoreRecord: true),
+                                    ->maxLength(255),
 
                                 Select::make('users')
+                                    ->relationship('users', 'name')
                                     ->label('Assign Users to this Role')
                                     ->options(User::pluck('name', 'id')->toArray())
-                                    ->multiple()
                                     ->searchable()
                                     ->preload()
                                     ->native(false)
                                     ->searchPrompt('Search Users...')
-                                    ->helperText('Select users who will have this role.'),
+                                    ->helperText('Select users who will have this role.')
+                                    ->createOptionUsing(function (array $data) {
+                                        $data['password'] = \Illuminate\Support\Facades\Hash::make($data['password']);
+                                        $user = User::create($data);
+                                        return $user->id;
+                                    })
+                                        ->createOptionForm([
+                                        TextInput::make('name')
+                                            ->label('Full name')
+                                            ->required(),
+                                        TextInput::make('username')
+                                            ->label('Username')
+                                            ->unique('users', 'username', ignoreRecord: true),
+                                        TextInput::make('email')
+                                            ->label('Email address')
+                                            ->email()
+                                            ->required()
+                                            ->unique('users', 'email', ignoreRecord: true),
+                                        TextInput::make('password')
+                                            ->label('Password')
+                                            ->revealable()
+                                            ->password()
+                                            ->required(),
+                                        FileUpload::make('avatar_url')
+                                            ->label('Avatar')
+                                            ->image()
+                                            ->directory('avatars')
+                                            ->visibility('public')
+                                            ->maxSize(102400000)
+                                            ->acceptedFileTypes([
+                                                'image/jpeg', 'image/png', 
+                                                'image/gif', 'image/webp', 
+                                                'image/svg+xml', 'application/pdf', 
+                                                'video/mp4', 'video/avi', 
+                                                'video/mov', 'audio/mpeg', 
+                                                'audio/wav', 'text/plain',                                        
+                                                'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+                                            ->imageEditor(),
+                                    ]),
 
                                 TextInput::make('guard_name')
                                     ->label(__('filament-shield::filament-shield.field.guard_name'))
@@ -136,7 +175,7 @@ class RoleResource extends Resource
                 TextColumn::make('name')
                     ->weight(FontWeight::Medium)
                     ->label(__('filament-shield::filament-shield.column.name'))
-                    ->formatStateUsing(fn (string $state): string => Str::headline($state))
+                    ->formatStateUsing(fn (string $state): string => ucwords(str_replace('_', ' ', $state)))
                     ->searchable()
                     ->alignment('center'),
                 TextColumn::make('guard_name')
@@ -160,7 +199,7 @@ class RoleResource extends Resource
                     ->alignment('center'),
                 TextColumn::make('users_count')
                     ->badge()
-                    ->label('Assigned Users') // Changed from filament-shield::filament-shield.column.users
+                    ->label('Assigned Users') 
                     ->counts('users')
                     ->color('success')
                     ->alignment('center'),
@@ -173,11 +212,12 @@ class RoleResource extends Resource
                 //
             ])
             ->recordActions([
-                ViewAction::make()
-                    ->button()
+                 ViewAction::make()
+                    ->modal() 
+                    ->slideOver() // Optional: biar kayak drawer dari kanan (keren!)
                     ->color('info')
-                    ->size('lg')
-                    ,
+                    ->button()
+                    ->size('lg'),
                 EditAction::make()
                     ->button()
                     ->color('warning')
@@ -219,7 +259,7 @@ class RoleResource extends Resource
         return [
             'index' => ListRoles::route('/'),
             'create' => CreateRole::route('/create'),
-            'view' => ViewRole::route('/{record}'),
+            // 'view' => ViewRole::route('/{record}'), // REMOVED! View pake Modal aja
             'edit' => EditRole::route('/{record}/edit'),
         ];
     }

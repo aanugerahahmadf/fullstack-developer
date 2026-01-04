@@ -17,11 +17,11 @@ class Dashboard extends BaseDashboard
 {
     protected static string|BackedEnum|null $navigationIcon = 'bxs-dashboard';
 
-    //protected static string|UnitEnum|null $navigationGroup = 'Dashboard';
+    protected static string|UnitEnum|null $navigationGroup = 'Dashboard';
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $title = 'Dashboard';
+    protected static ?string $title = 'Widgets';
 
     public static function getRouteName(?Panel $panel = null): string
     {

@@ -9,6 +9,7 @@ import {
   getCctvsByRoom
 } from '@/lib/api'
 import { handleApiError } from '@/lib/enhanced-utils'
+import { ErrorBoundary } from '@/components/error-boundary'
 
 // Dynamically import lucide-react icons to avoid HMR issues with Turbopack
 const X = dynamic(() => import('lucide-react').then((mod) => mod.X), { ssr: false })
@@ -45,7 +46,7 @@ const Popup = dynamic(
   { ssr: false }
 )
 
-export default function MapsPage() {
+function MapsPage() {
   const [buildings, setBuildings] = useState<any[]>([])
   const [rooms, setRooms] = useState<any[]>([])
   const [cctvs, setCctvs] = useState<any[]>([])
@@ -56,6 +57,7 @@ export default function MapsPage() {
   const [showRoomsModal, setShowRoomsModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
+  const [leafletReady, setLeafletReady] = useState(false)
   
   const mapRef = useRef<any>(null)
   const leafletRef = useRef<any>(null)
@@ -79,6 +81,8 @@ export default function MapsPage() {
           iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
         })
+        
+        setLeafletReady(true)
       } catch (error) {
         console.error('Failed to load Leaflet:', error)
       }
@@ -218,24 +222,32 @@ export default function MapsPage() {
   }, [])
   
   // Memoized icon creation function - only for building markers now
-  const createCustomIcon = useCallback((isBuilding: boolean = true) => {
-    if (!leafletRef.current) return undefined
+  const createCustomIcon = useCallback(() => {
+    if (!leafletRef.current || !leafletRef.current.Icon) {
+      console.warn('Leaflet not loaded yet');
+      return undefined;
+    }
     
-    // Simpler blue circle marker similar to reference
-    const svgIcon = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-        <circle cx="12" cy="12" r="10" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2"/>
-        <circle cx="12" cy="12" r="4" fill="#ffffff"/>
-      </svg>
-    `
-    
-    return new leafletRef.current.Icon({
-      iconUrl: `data:image/svg+xml;base64,${btoa(svgIcon)}`,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
-      popupAnchor: [0, -12]
-    })
-  }, [])
+    try {
+      // Simpler blue circle marker similar to reference
+      const svgIcon = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+          <circle cx="12" cy="12" r="10" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2"/>
+          <circle cx="12" cy="12" r="4" fill="#ffffff"/>
+        </svg>
+      `;
+      
+      return new leafletRef.current.Icon({
+        iconUrl: `data:image/svg+xml;base64,${btoa(svgIcon)}`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+        popupAnchor: [0, -12]
+      });
+    } catch (error) {
+      console.error('Error creating custom icon:', error);
+      return undefined;
+    }
+  }, [leafletReady]);
   
   const handleFullscreen = () => {
     const element = document.querySelector('.live-stream-video-container')
@@ -318,11 +330,15 @@ export default function MapsPage() {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               />
               {/* Building Markers (Blue Icons) - Always shown */}
-              {buildings.filter((b: any) => b.latitude && b.longitude).map((building: any) => (
+              {buildings.filter((b: any) => b.latitude && b.longitude).map((building: any) => {
+                const customIcon = createCustomIcon();
+                if (!customIcon) return null; // Skip if icon not ready
+                
+                return (
                 <Marker 
                   key={`building-${building.id}`} 
                   position={[parseFloat(building.latitude), parseFloat(building.longitude)]}
-                  icon={createCustomIcon(true)}
+                  icon={customIcon}
                   eventHandlers={{
                     click: () => handleBuildingClick(building)
                   }}
@@ -339,7 +355,8 @@ export default function MapsPage() {
                     </div>
                   </Popup>
                 </Marker>
-              ))}
+                );
+              })}
               {/* Room Markers - Removed as per user request */}
             </MapContainer>
           ) : (
@@ -501,3 +518,5 @@ export default function MapsPage() {
     </main>
   )
 }
+
+export default MapsPage

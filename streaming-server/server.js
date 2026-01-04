@@ -19,7 +19,7 @@ const config = {
     ping_timeout: 60
   },
   http: {
-    port: 8000, // Changed from 8000 to 8000 to avoid conflict
+    port: 8001, // Changed from 8000 to 8001 to avoid conflict with Laravel
     allow_origin: '*',
     mediaroot: streamsDir
   }
@@ -74,7 +74,7 @@ app.post('/api/start-stream/:cctvId', async (req, res) => {
     if (ffmpegProcesses.has(cctvId)) {
       return res.json({ 
         message: 'Stream already running', 
-        streamUrl: `http://127.0.0.1:8000/live/${cctvId}/index.m3u8` // Updated port
+        streamUrl: `http://127.0.0.1:8001/live/${cctvId}/index.m3u8` // Updated port
       });
     }
     
@@ -116,6 +116,8 @@ app.post('/api/start-stream/:cctvId', async (req, res) => {
       '-c:v', 'libx264',
       '-preset', 'ultrafast',
       '-tune', 'zerolatency',
+      '-g', '60', // Force keyframe every 60 frames (2s at 30fps)
+      '-sc_threshold', '0', // Disable scene change detection for strict GOP
       '-c:a', 'aac',
       '-ar', '44100',
       '-f', 'hls',
@@ -149,7 +151,7 @@ app.post('/api/start-stream/:cctvId', async (req, res) => {
     setTimeout(() => {
       res.json({ 
         message: 'Stream started', 
-        streamUrl: `http://127.0.0.1:8000/live/${cctvId}/index.m3u8` // Updated port
+        streamUrl: `http://127.0.0.1:8001/live/${cctvId}/index.m3u8` // Updated port
       });
     }, 2000);
     
@@ -180,7 +182,7 @@ app.get('/api/stream-status/:cctvId', (req, res) => {
   res.json({ 
     cctvId, 
     isRunning,
-    streamUrl: isRunning ? `http://127.0.0.1:8000/live/${cctvId}/index.m3u8` : null // Updated port
+    streamUrl: isRunning ? `http://127.0.0.1:8001/live/${cctvId}/index.m3u8` : null // Updated port
   });
 });
 

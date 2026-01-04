@@ -161,7 +161,33 @@ export default function RoomCctvsPage() {
       const mod = await import('hls.js')
       const Hls = mod.default
       if (Hls.isSupported()) {
-        hls = new Hls({ maxBufferLength: 10 })
+        hls = new Hls({ 
+          maxBufferLength: 15, // Balanced connection between latency and stability
+          maxMaxBufferLength: 30,
+          enableWorker: true,
+          liveSyncDurationCount: 3, // Start 3 segments behind live edge (approx 6s latency)
+          manifestLoadingTimeOut: 15000,
+        })
+        
+        // Add error recovery
+        hls.on(Hls.Events.ERROR, function(event: any, data: any) {
+          if (data.fatal) {
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                console.log('fatal network error encountered, try to recover');
+                hls.startLoad();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                console.log('fatal media error encountered, try to recover');
+                hls.recoverMediaError();
+                break;
+              default:
+                hls.destroy();
+                break;
+            }
+          }
+        });
+
         hls.loadSource(url)
         hls.attachMedia(video)
       } else {

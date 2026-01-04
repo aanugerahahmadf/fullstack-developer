@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "dev:stable": "next dev",
+    "build": "next build --webpack",
+    "start": "next start",
+    "lint": "next lint"
+  }
+}

@@ -28,15 +28,15 @@ class ContactResource extends Resource
 {
     protected static ?string $model = Contact::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Web';
+    protected static string|UnitEnum|null $navigationGroup = 'CRUD For All Pages';
 
     protected static string|BackedEnum|null $navigationIcon = 'bxs-message-detail';
 
-    protected static ?string $navigationLabel = 'Contact';
+    protected static ?string $navigationLabel = 'Contact Us';
 
-    protected static ?string $modelLabel = 'Contact Us';
+    protected static ?string $modelLabel = 'Contact Us Management';
 
-    protected static ?string $pluralModelLabel = 'Contact Us';
+    protected static ?string $pluralModelLabel = 'Contact Us Management';
 
     protected static ?int $navigationSort = 4;
 

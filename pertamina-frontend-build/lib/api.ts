@@ -1,6 +1,40 @@
 // API configuration for the frontend to communicate directly with the backend
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000/api';
 
+// PERSISTENT CACHE (LocalStorage + Memory)
+// Cache survives page reloads!
+const CACHE_KEY_PREFIX = 'pertamina_cache_v2_';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
+// Helper to get from storage safely
+const getFromCache = (key: string) => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const item = localStorage.getItem(CACHE_KEY_PREFIX + key);
+    if (!item) return null;
+    
+    const parsed = JSON.parse(item);
+    // Return data regardless of expiry first (Stale-While-Revalidate)
+    // We can check expiry to decide if we need to refresh in background
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+// Helper to save to storage safely
+const saveToCache = (key: string, data: any) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(CACHE_KEY_PREFIX + key, JSON.stringify({
+      data,
+      timestamp: Date.now()
+    }));
+  } catch (e) {
+    console.warn('Cache quota exceeded likely', e);
+  }
+};
+
 // Define response wrapper interface
 interface ApiResponse<T> {
   success: boolean;
@@ -8,17 +42,50 @@ interface ApiResponse<T> {
   data: T;
 }
 
-// Helper function to make API requests with improved error handling
+// Simple, fast API helper with PERSISTENT CACHING
 export async function api<T>(endpoint: string, options: RequestInit = {}, timeoutMs: number = 10000): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   
+  // Create simple cache key based on URL
+  const isGetRequest = !options.method || options.method === 'GET';
+  const cacheKey = endpoint;
+
+  // 1. CEK CACHE (LOCAL STORAGE) - INSTANT LOAD!
+  if (isGetRequest) {
+    const cached = getFromCache(cacheKey);
+    if (cached) {
+      // If cache exists, return it IMMEDIATELY! 
+      // Don't wait for network.
+      // We can fetch in background if it's too old (> 5 mins) but return cached data first.
+      
+      const age = Date.now() - cached.timestamp;
+      if (age < CACHE_DURATION) {
+        // Data masih fresh, pakai ini saja. No loading at all.
+        return cached.data as T;
+      }
+      
+      // Data agak lama, tapi kembalikan saja dulu biar TIDAK ADA LOADING SCREEEN
+      // Nanti kita bisa refresh di background (bukan di sini biar ga block)
+       console.log(`Serving stale cache for ${endpoint} (age: ${age}ms)`);
+       // Trigger background refresh (optional, but good practice)
+       fetchWithErrorHandling<T>(url, options, timeoutMs, cacheKey).catch(() => {});
+       
+       return cached.data as T;
+    }
+  }
+  
+  // Kalau tidak ada cache sama sekali, baru fetch
+  return fetchWithErrorHandling<T>(url, options, timeoutMs, isGetRequest ? cacheKey : undefined);
+}
+
+// Separated fetch logic
+async function fetchWithErrorHandling<T>(url: string, options: RequestInit, timeoutMs: number, cacheKey?: string): Promise<T> {
   const config: RequestInit = {
-    credentials: 'include', // Include credentials for CORS requests
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
     },
-    // Allow caller to override timeout
     signal: options.signal ?? AbortSignal.timeout(timeoutMs),
     ...options,
   };
@@ -31,15 +98,21 @@ export async function api<T>(endpoint: string, options: RequestInit = {}, timeou
     }
     
     const result: ApiResponse<T> = await response.json();
+    
+    // Simpan ke Cache
+    if (cacheKey) {
+      saveToCache(cacheKey, result.data);
+    }
+
     return result.data;
   } catch (error) {
-    console.error('API request error:', error);
-    // Provide more detailed error information
+    console.error(`API request error for ${url}:`, error);
+    
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
-        throw new Error('API request timeout: The request took too long to complete');
+         // Silently fail if just timeout and allow component to handle or show stale data
+        throw new Error('Timeout'); 
       }
-      // Re-throw the error to be handled by the calling function
       throw error;
     }
     throw new Error('Unknown API request error');
